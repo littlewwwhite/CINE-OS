@@ -7,7 +7,7 @@ import Loader from './components/Loader';
 import Cursor from './components/Cursor';
 import DecryptedText from './components/DecryptedText';
 import { analyzeNovel, generateShotsForBeat, generateShotImage, generateShotVideo } from './services/gemini';
-import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot, Project } from './types';
+import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot, Project, Asset } from './types';
 
 type ViewState = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'IMPORT' | 'WORKSPACE';
 type Theme = 'DARK' | 'LIGHT';
@@ -297,6 +297,94 @@ const App: React.FC = () => {
     } finally {
         setProcessingShotId(null);
     }
+  };
+
+  // --- MANUAL ADDITION HANDLERS ---
+
+  const handleAddAsset = () => {
+    const name = window.prompt("ENTER ASSET NAME (Character/Location):", "New Character");
+    if (!name) return;
+    
+    const newAsset: Asset = {
+        id: `asset_${Date.now()}`,
+        name: name,
+        type: 'CHARACTER',
+        visualDescription: 'A placeholder description waiting for detailed inputs.'
+    };
+
+    setScriptData(prev => {
+        if (!prev) return { title: 'New Project', genre: '', logline: '', assets: [newAsset], scenes: [] };
+        return { ...prev, assets: [...prev.assets, newAsset] };
+    });
+    addLog(`Asset Created: ${name}`, 'success');
+  };
+
+  const handleAddScene = () => {
+    const slugline = window.prompt("ENTER SCENE SLUGLINE (e.g., INT. VOID - NIGHT):", "INT. UNTITLED SCENE - DAY");
+    if (!slugline) return;
+
+    const newScene: Scene = {
+        id: `scene_${Date.now()}`,
+        slugline: slugline,
+        beats: [],
+        isExpanded: true
+    };
+
+    setScriptData(prev => {
+         if (!prev) return { title: 'New Project', genre: '', logline: '', assets: [], scenes: [newScene] };
+         return { ...prev, scenes: [...prev.scenes, newScene] };
+    });
+    addLog(`Scene Created: ${slugline}`, 'success');
+  };
+
+  const handleAddBeat = (e: React.MouseEvent, sceneId: string) => {
+    e.stopPropagation(); // Prevent toggling scene
+    const description = window.prompt("ENTER BEAT ACTION/DESCRIPTION:", "A character walks into the room...");
+    if (!description) return;
+
+    const newBeat: Beat = {
+        id: `beat_${Date.now()}`,
+        description: description,
+        shots: []
+    };
+
+    setScriptData(prev => {
+        if (!prev) return null;
+        return {
+            ...prev,
+            scenes: prev.scenes.map(s => s.id === sceneId ? { ...s, beats: [...s.beats, newBeat] } : s)
+        };
+    });
+    addLog(`Beat Added to Scene`, 'success');
+  };
+
+  const handleAddShot = () => {
+    if (!selectedBeatId || !selectedSceneId) return;
+    const prompt = window.prompt("ENTER VISUAL PROMPT FOR SHOT:", "Wide shot of the environment, cinematic lighting.");
+    if (!prompt) return;
+
+    const newShot: Shot = {
+        id: `shot_${Date.now()}`,
+        shotType: 'WIDE SHOT',
+        visualPrompt: prompt,
+        action: 'Static camera',
+        assetIds: []
+    };
+
+    setScriptData(prev => {
+        if (!prev) return null;
+        return {
+            ...prev,
+            scenes: prev.scenes.map(s => {
+                if (s.id !== selectedSceneId) return s;
+                return {
+                    ...s,
+                    beats: s.beats.map(b => b.id === selectedBeatId ? { ...b, shots: [...b.shots, newShot] } : b)
+                };
+            })
+        };
+    });
+    addLog(`Manual Shot Created`, 'success');
   };
 
   const getActiveScene = () => scriptData?.scenes.find(s => s.id === selectedSceneId);
@@ -870,7 +958,12 @@ const App: React.FC = () => {
                             <h2 className="text-xs font-bold font-mono tracking-widest flex items-center gap-2">
                                 <Users size={14} /> CASTING_DECK
                             </h2>
-                            <span className="text-[10px] text-[var(--color-text-muted)]">{scriptData?.assets.length || 0} ITEMS</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-[var(--color-text-muted)]">{scriptData?.assets.length || 0} ITEMS</span>
+                                <button onClick={handleAddAsset} className="p-1 hover:bg-[var(--color-accent)] hover:text-white rounded transition-colors" title="Add Asset">
+                                    <Plus size={12} />
+                                </button>
+                            </div>
                          </div>
                          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-w-[300px] custom-scrollbar">
                             {scriptData?.assets.map(asset => (
@@ -906,15 +999,54 @@ const App: React.FC = () => {
                             <h2 className="text-xs font-bold font-mono tracking-widest flex items-center gap-2">
                                 <FileText size={14} /> SCRIPT_SEQUENCE
                             </h2>
-                            {state === ProcessingState.ANALYZING_SCRIPT && <Loader text="PARSING" />}
+                            <div className="flex items-center gap-2">
+                                {state === ProcessingState.ANALYZING_SCRIPT && <Loader text="PARSING" />}
+                                <button onClick={handleAddScene} className="p-1 hover:bg-[var(--color-accent)] hover:text-white rounded transition-colors" title="Add Scene">
+                                    <Plus size={12} />
+                                </button>
+                            </div>
                          </div>
                          
                          <div className="flex-1 overflow-y-auto custom-scrollbar">
                             {/* Empty State */}
                             {scriptData?.scenes.length === 0 && state !== ProcessingState.ANALYZING_SCRIPT && (
-                                <div className="h-full flex flex-col items-center justify-center text-[var(--color-text-muted)] gap-4">
-                                    <FileText size={48} className="opacity-20" />
-                                    <p className="font-mono text-xs">NO SEQUENCE DATA</p>
+                                <div className="h-full flex flex-col items-center justify-center text-[var(--color-text-muted)] gap-8 p-12">
+                                    <div className="flex flex-col items-center gap-4 opacity-50">
+                                        <FileText size={48} />
+                                        <p className="font-mono text-xs">NO SEQUENCE DATA</p>
+                                    </div>
+                                    
+                                    {/* Quick Import Actions within Workspace */}
+                                    <div className="flex gap-4">
+                                        <button 
+                                            onClick={() => novelInputRef.current?.click()}
+                                            className="px-6 py-3 border border-[var(--color-line)] bg-[var(--color-card)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors font-mono text-[10px] tracking-widest"
+                                        >
+                                            + IMPORT RAW NOVEL
+                                        </button>
+                                        <button 
+                                            onClick={() => scriptInputRef.current?.click()}
+                                            className="px-6 py-3 border border-[var(--color-line)] bg-[var(--color-card)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors font-mono text-[10px] tracking-widest"
+                                        >
+                                            + IMPORT SCREENPLAY
+                                        </button>
+                                    </div>
+                                    
+                                    {/* Hidden inputs to support the clicks */}
+                                    <input 
+                                        type="file" 
+                                        ref={novelInputRef} 
+                                        className="hidden" 
+                                        accept=".txt,.md" 
+                                        onChange={(e) => handleFileUpload(e, 'NOVEL')} 
+                                    />
+                                    <input 
+                                        type="file" 
+                                        ref={scriptInputRef} 
+                                        className="hidden" 
+                                        accept=".txt,.md" 
+                                        onChange={(e) => handleFileUpload(e, 'SCRIPT')} 
+                                    />
                                 </div>
                             )}
 
@@ -932,6 +1064,13 @@ const App: React.FC = () => {
                                                 {scene.slugline}
                                             </h3>
                                             <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
+                                                <button 
+                                                    onClick={(e) => handleAddBeat(e, scene.id)}
+                                                    className="p-1 hover:bg-[var(--color-accent)] hover:text-white rounded transition-colors mr-2"
+                                                    title="Add Beat"
+                                                >
+                                                    <Plus size={10} />
+                                                </button>
                                                 <span className="text-[10px]">{scene.beats.length} BEATS</span>
                                                 {scene.isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                             </div>
@@ -990,7 +1129,17 @@ const App: React.FC = () => {
                             <h2 className="text-xs font-bold font-mono tracking-widest flex items-center gap-2">
                                 <Camera size={14} /> SHOT_LIST: {getActiveScene()?.slugline.split(' - ')[0] || "SELECT SCENE"}
                             </h2>
-                            {state === ProcessingState.GENERATING_SHOTS && <Loader text="DIRECTING" />}
+                            <div className="flex items-center gap-2">
+                                {state === ProcessingState.GENERATING_SHOTS && <Loader text="DIRECTING" />}
+                                <button 
+                                    onClick={handleAddShot} 
+                                    disabled={!selectedBeatId}
+                                    className={`p-1 rounded transition-colors ${!selectedBeatId ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[var(--color-accent)] hover:text-white'}`} 
+                                    title="Add Shot"
+                                >
+                                    <Plus size={12} />
+                                </button>
+                            </div>
                          </div>
 
                          <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
