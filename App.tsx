@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play, CheckCircle, Cpu, Globe, Layers, MessageSquare, HelpCircle, Terminal as TerminalIcon, Github, Twitter, ChevronLeft, Layout, Maximize2, Shield, Lock, Mail, Fingerprint, LogOut, HardDrive, Clock, Activity, Plus, MoreVertical, Folder } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence, useScroll, useTransform, Variants } from 'framer-motion';
+import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play, CheckCircle, Cpu, Globe, Layers, MessageSquare, HelpCircle, Terminal as TerminalIcon, Github, Twitter, ChevronLeft, Layout, Maximize2, Shield, Lock, Mail, Fingerprint, LogOut, HardDrive, Clock, Activity, Plus, MoreVertical, Folder, Sun, Moon } from 'lucide-react';
 import AsciiBackground from './components/AsciiBackground';
 import Terminal from './components/Terminal';
 import Loader from './components/Loader';
@@ -10,6 +10,7 @@ import { analyzeNovel, generateShotsForBeat, generateShotImage, generateShotVide
 import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot, Project } from './types';
 
 type ViewState = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'IMPORT' | 'WORKSPACE';
+type Theme = 'DARK' | 'LIGHT';
 
 interface User {
   id: string;
@@ -18,12 +19,12 @@ interface User {
   tier: 'FREE' | 'PRO';
 }
 
-const fadeInUp = {
+const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
 };
 
-const staggerContainer = {
+const staggerContainer: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
@@ -62,6 +63,7 @@ const MOCK_PROJECTS: Project[] = [
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('LANDING');
+  const [theme, setTheme] = useState<Theme>('DARK');
   const [state, setState] = useState<ProcessingState>(ProcessingState.IDLE);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [scriptData, setScriptData] = useState<ScriptData | null>(null);
@@ -88,6 +90,16 @@ const App: React.FC = () => {
   const y1 = useTransform(scrollY, [0, 1000], [0, 200]);
   const y2 = useTransform(scrollY, [0, 1000], [0, -150]);
   const opacityText = useTransform(scrollY, [0, 300], [1, 0]);
+
+  // Apply Theme
+  useEffect(() => {
+    document.body.className = theme === 'LIGHT' ? 'light-mode' : '';
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'DARK' ? 'LIGHT' : 'DARK');
+    addLog(`THEME SWITCHED TO ${theme === 'DARK' ? 'LIGHT' : 'DARK'} MODE`, 'info');
+  };
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -299,12 +311,12 @@ const App: React.FC = () => {
   ];
 
   return (
-    <div className="relative min-h-screen text-[#F0F0F0] font-sans selection:bg-[#FF4500] selection:text-white bg-[#050505] overflow-hidden flex flex-col cursor-none">
+    <div className="relative min-h-screen text-[var(--color-text-main)] font-sans selection:bg-[var(--color-accent)] selection:text-white bg-[var(--color-void)] overflow-hidden flex flex-col cursor-none transition-colors duration-300">
       <Cursor />
-      <AsciiBackground />
+      <AsciiBackground theme={theme} />
 
       {/* Header */}
-      <header className="fixed top-0 left-0 w-full h-14 border-b border-[#333] bg-[#050505]/90 backdrop-blur-md flex items-center justify-between px-6 z-50">
+      <header className="fixed top-0 left-0 w-full h-14 border-b border-[var(--color-line)] bg-[var(--color-void)]/90 backdrop-blur-md flex items-center justify-between px-6 z-50 transition-colors">
         <div 
             className="flex items-center gap-4 cursor-pointer group" 
             onClick={() => user ? setView('DASHBOARD') : setView('LANDING')}
@@ -313,11 +325,11 @@ const App: React.FC = () => {
             <h1 className="text-lg font-bold tracking-tighter font-serif">CINE-OS <span className="text-[10px] font-mono font-normal opacity-50 ml-2">PROD_PIPELINE_V4</span></h1>
         </div>
         <div className="flex items-center gap-6">
-            <nav className="hidden md:flex gap-6 text-[10px] font-mono tracking-widest text-gray-400 items-center">
+            <nav className="hidden md:flex gap-6 text-[10px] font-mono tracking-widest text-[var(--color-text-muted)] items-center">
                 {user ? (
                     <>
                         <span className="text-[var(--color-accent)] flex items-center gap-2">
-                             <Fingerprint size={12}/> {user.id} <span className="text-gray-600">//</span> {user.name}
+                             <Fingerprint size={12}/> {user.id} <span className="text-[var(--color-text-muted)]">//</span> {user.name}
                         </span>
                         <button onClick={handleLogout} className="hover:text-red-500 transition-colors flex items-center gap-1">
                             <LogOut size={12}/> DISCONNECT
@@ -325,11 +337,15 @@ const App: React.FC = () => {
                     </>
                 ) : (
                     <>
-                        <button onClick={() => setView('LANDING')} className="hover:text-white transition-colors">SYSTEM</button>
-                        <button onClick={() => setView('AUTH')} className="hover:text-white transition-colors">LOGIN</button>
-                        <a href="#" className="hover:text-white transition-colors">DOCS</a>
+                        <button onClick={() => setView('LANDING')} className="hover:text-[var(--color-text-main)] transition-colors">SYSTEM</button>
+                        <button onClick={() => setView('AUTH')} className="hover:text-[var(--color-text-main)] transition-colors">LOGIN</button>
+                        <a href="#" className="hover:text-[var(--color-text-main)] transition-colors">DOCS</a>
                     </>
                 )}
+                {/* Theme Toggle */}
+                <button onClick={toggleTheme} className="hover:text-[var(--color-text-main)] transition-colors">
+                    {theme === 'DARK' ? <Sun size={14} /> : <Moon size={14} />}
+                </button>
             </nav>
             {state !== ProcessingState.IDLE && state !== ProcessingState.COMPLETE && (
                 <div className="text-[10px] font-mono text-[var(--color-accent)] animate-pulse flex items-center gap-2">
@@ -355,25 +371,25 @@ const App: React.FC = () => {
                 >
                     {/* SECTION 1: HERO */}
                     <motion.section 
-                        className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-8 relative border-b border-[#222] overflow-hidden"
+                        className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-8 relative border-b border-[var(--color-line)] overflow-hidden"
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
                     >
                         {/* Parallax Background Elements */}
                         <motion.div style={{ y: y1 }} className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                            <div className="w-[80vw] h-[80vw] border border-white rounded-full animate-[spin_60s_linear_infinite]" />
+                            <div className="w-[80vw] h-[80vw] border border-[var(--color-text-muted)] rounded-full animate-[spin_60s_linear_infinite]" />
                         </motion.div>
                         <motion.div style={{ y: y2 }} className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                            <div className="w-[60vw] h-[60vw] border border-white rounded-full absolute animate-[spin_40s_linear_infinite_reverse]" />
+                            <div className="w-[60vw] h-[60vw] border border-[var(--color-text-muted)] rounded-full absolute animate-[spin_40s_linear_infinite_reverse]" />
                         </motion.div>
 
-                        {/* Spotlight Gradient */}
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0)_60%)] pointer-events-none" />
+                        {/* Spotlight Gradient - Adapted for theme */}
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] pointer-events-none ${theme === 'DARK' ? 'bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0)_60%)]' : 'bg-[radial-gradient(circle,rgba(0,0,0,0.03)_0%,rgba(255,255,255,0)_60%)]'}`} />
 
                         <motion.div style={{ opacity: opacityText }} className="text-center space-y-12 z-10 max-w-7xl">
                             <div className="flex flex-col items-center justify-center select-none">
-                                <div className="flex flex-col items-center text-8xl md:text-[11rem] font-serif tracking-tighter leading-[0.85] text-white mix-blend-difference hover:tracking-wide transition-all duration-700 uppercase">
+                                <div className="flex flex-col items-center text-8xl md:text-[11rem] font-serif tracking-tighter leading-[0.85] text-[var(--color-text-main)] mix-blend-difference hover:tracking-wide transition-all duration-700 uppercase">
                                     <DecryptedText text="CODE" speed={100} delay={200} />
                                     <span className="text-[var(--color-accent)]">
                                         <DecryptedText text="TO" speed={100} delay={800} />
@@ -384,7 +400,7 @@ const App: React.FC = () => {
                             
                             <motion.p 
                                 variants={fadeInUp}
-                                className="font-mono text-sm md:text-base tracking-[0.3em] text-gray-400 max-w-2xl mx-auto uppercase"
+                                className="font-mono text-sm md:text-base tracking-[0.3em] text-[var(--color-text-muted)] max-w-2xl mx-auto uppercase"
                             >
                                 The world's first generative filmmaking compiler.<br/>
                                 Transform manuscripts into moving pictures.
@@ -393,9 +409,9 @@ const App: React.FC = () => {
                             <motion.div className="pt-8" variants={fadeInUp}>
                                 <button 
                                     onClick={() => setView('AUTH')}
-                                    className="group relative px-12 py-6 bg-transparent border border-[#333] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-all duration-300 overflow-hidden"
+                                    className="group relative px-12 py-6 bg-transparent border border-[var(--color-line)] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-all duration-300 overflow-hidden"
                                 >
-                                    <span className="flex items-center gap-3 font-mono text-xs tracking-widest group-hover:text-white transition-colors relative z-10">
+                                    <span className="flex items-center gap-3 font-mono text-xs tracking-widest group-hover:text-[var(--color-text-main)] transition-colors relative z-10">
                                         INITIALIZE SYSTEM <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                     </span>
                                     <div className="absolute inset-0 bg-[var(--color-accent)]/5 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
@@ -407,8 +423,8 @@ const App: React.FC = () => {
                     </motion.section>
 
                     {/* SECTION 2: SOCIAL PROOF */}
-                    <section className="border-b border-[#222] bg-[#0A0A0A] py-8 overflow-hidden whitespace-nowrap z-20 relative">
-                        <div className="flex items-center gap-16 animate-marquee text-gray-600 font-mono text-xs tracking-widest opacity-50">
+                    <section className="border-b border-[var(--color-line)] bg-[var(--color-card)] py-8 overflow-hidden whitespace-nowrap z-20 relative transition-colors">
+                        <div className="flex items-center gap-16 animate-marquee text-[var(--color-text-muted)] font-mono text-xs tracking-widest opacity-50">
                             {[1,2,3,4].map(i => (
                                 <React.Fragment key={i}>
                                     <span className="flex items-center gap-2"><Cpu size={14}/> POWERED BY GEMINI 2.5</span>
@@ -422,15 +438,16 @@ const App: React.FC = () => {
 
                      {/* SECTION 3: PROBLEM STATEMENT */}
                      <motion.section 
-                        className="py-32 px-8 border-b border-[#222] bg-white text-black min-h-screen flex items-center"
+                        className={`py-32 px-8 border-b border-[var(--color-line)] min-h-screen flex items-center transition-colors ${theme === 'DARK' ? 'bg-white text-black' : 'bg-black text-white'}`}
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, amount: 0.1 }}
                     >
+                        {/* Note: This section intentionally inverts the current theme for contrast */}
                         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-16">
                             <div className="md:col-span-4 relative">
                                 <div className="md:sticky md:top-32">
-                                    <h3 className="font-mono text-xs tracking-widest mb-6 text-gray-500 border-b border-gray-200 pb-4">01 // THE BOTTLENECK</h3>
+                                    <h3 className={`font-mono text-xs tracking-widest mb-6 border-b pb-4 ${theme === 'DARK' ? 'text-gray-500 border-gray-200' : 'text-gray-400 border-gray-800'}`}>01 // THE BOTTLENECK</h3>
                                     <h2 className="text-6xl font-serif leading-none mb-6">
                                         Text is static.<br/>Imagination is fluid.
                                     </h2>
@@ -438,27 +455,20 @@ const App: React.FC = () => {
                             </div>
                             
                             <div className="md:col-span-8 flex flex-col gap-12 pt-8">
-                                <motion.p variants={fadeInUp} className="font-mono text-lg leading-relaxed text-gray-800 border-l-2 border-black pl-8">
+                                <motion.p variants={fadeInUp} className={`font-mono text-lg leading-relaxed border-l-2 pl-8 ${theme === 'DARK' ? 'text-gray-800 border-black' : 'text-gray-200 border-white'}`}>
                                     Traditional pre-visualization requires weeks of storyboarding, expensive concept artists, and ambiguous communication. The gap between the writer's mind and the director's screen is where the budget dies.
                                 </motion.p>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
-                                    <motion.div variants={fadeInUp} className="bg-gray-100 p-8 border border-gray-300">
-                                        <div className="flex items-center justify-between mb-4 text-xs font-mono text-gray-500">
-                                            <span>INPUT: SCRIPT.PDF</span>
-                                            <span className="text-red-500">ERROR: AMBIGUOUS</span>
-                                        </div>
-                                        <p className="font-serif italic text-gray-600 text-sm">"INT. LAB - NIGHT. A chaotic mess of cables."</p>
+                                    <motion.div variants={fadeInUp} className={`p-8 border ${theme === 'DARK' ? 'bg-gray-100 border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
+                                        <FileText className="w-8 h-8 mb-4 opacity-50" />
+                                        <h4 className="font-bold text-xl mb-2">Ambiguous Scripts</h4>
+                                        <p className="text-sm opacity-60">"Int. Lab - Day" means a thousand different things to a thousand different people.</p>
                                     </motion.div>
-                                    <motion.div variants={fadeInUp} className="bg-black text-white p-8 shadow-2xl relative overflow-hidden">
-                                         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070&auto=format&fit=crop')] bg-cover opacity-20 grayscale" />
-                                         <div className="relative z-10">
-                                            <div className="flex items-center justify-between mb-4 text-xs font-mono text-[var(--color-accent)]">
-                                                <span>OUTPUT: RENDER.MP4</span>
-                                                <span className="animate-pulse">GENERATED</span>
-                                            </div>
-                                            <p className="font-mono text-xs text-gray-400">Time: 00:04s // Cost: $0.02</p>
-                                         </div>
+                                    <motion.div variants={fadeInUp} className={`p-8 border ${theme === 'DARK' ? 'bg-gray-100 border-gray-200' : 'bg-gray-900 border-gray-800'}`}>
+                                        <Clock className="w-8 h-8 mb-4 opacity-50" />
+                                        <h4 className="font-bold text-xl mb-2">Linear Time</h4>
+                                        <p className="text-sm opacity-60">Storyboarding takes days. AI generation takes seconds. Iterate at the speed of thought.</p>
                                     </motion.div>
                                 </div>
                             </div>
@@ -467,675 +477,607 @@ const App: React.FC = () => {
 
                     {/* SECTION 4: ARCHITECTURE */}
                     <motion.section 
-                        className="py-32 px-8 border-b border-[#222] bg-[#050505] min-h-screen"
+                        className="py-32 px-8 border-b border-[var(--color-line)]"
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, amount: 0.1 }}
-                        variants={staggerContainer}
+                        viewport={{ once: true }}
                     >
                          <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-16">
-                            <div className="md:col-span-4">
+                            <div className="md:col-span-4 relative">
                                 <div className="md:sticky md:top-32">
-                                    <h3 className="font-mono text-xs tracking-widest mb-6 text-gray-500 border-b border-[#333] pb-4">02 // ARCHITECTURE</h3>
-                                    <p className="font-mono text-sm text-gray-400 leading-relaxed">
-                                        A modular pipeline powered by Google's multi-modal foundation models.
-                                    </p>
+                                     <h3 className="text-[var(--color-text-muted)] font-mono text-xs tracking-widest mb-6 border-b border-[var(--color-line)] pb-4">02 // SYSTEM ARCHITECTURE</h3>
+                                     <h2 className="text-5xl font-serif leading-none mb-6">Modular<br/>Intelligence.</h2>
                                 </div>
                             </div>
-
                             <div className="md:col-span-8">
-                                <div className="grid grid-cols-1 gap-px bg-[#222] border border-[#222]">
+                                <motion.div variants={staggerContainer} className="grid grid-cols-1 md:grid-cols-2 gap-px bg-[var(--color-line)] border border-[var(--color-line)]">
                                     {[
-                                        { title: "Semantic Parser", icon: <FileText/>, desc: "Deconstructs raw narrative into atomic beats and structured scenes using Gemini 2.5 Pro.", id: "GEMINI-2.5-PRO" },
-                                        { title: "Consistency Engine", icon: <Users/>, desc: "Maintains a persistent vector database of character assets to ensure visual continuity.", id: "VECTOR-DB" },
-                                        { title: "Physics Renderer", icon: <Film/>, desc: "Veo 3.1 simulates camera lenses, lighting physics, and motion vectors for photorealism.", id: "VEO-3.1" },
-                                    ].map((feature, idx) => (
-                                        <motion.div variants={fadeInUp} key={idx} className="bg-[#0A0A0A] p-12 hover:bg-[#111] transition-colors group relative overflow-hidden">
-                                            <div className="absolute top-4 right-4 text-[10px] font-mono text-[#333] group-hover:text-[var(--color-accent)] transition-colors">
-                                                ID: {feature.id}
-                                            </div>
-                                            <div className="mb-8 text-[var(--color-accent)] group-hover:scale-110 transition-transform origin-left">
-                                                {feature.icon}
-                                            </div>
-                                            <h4 className="text-2xl font-serif text-white mb-4">{feature.title}</h4>
-                                            <p className="font-mono text-sm text-gray-500 leading-relaxed max-w-md">{feature.desc}</p>
+                                        { title: "Gemini 2.5 Parser", desc: "Understands narrative nuance, subtext, and emotional beats.", icon: <Book /> },
+                                        { title: "Context Injector", desc: "Maintains character consistency across shots using vector embeddings.", icon: <Shield /> },
+                                        { title: "Veo 3.1 Renderer", desc: "High-fidelity video synthesis with cinematic camera motion control.", icon: <VideoIcon /> },
+                                        { title: "React 19 Core", desc: "Real-time, zero-latency interface for rapid editorial decisions.", icon: <Layout /> }
+                                    ].map((item, i) => (
+                                        <motion.div key={i} variants={fadeInUp} className="bg-[var(--color-card)] p-12 hover:bg-[var(--color-panel)] transition-colors group">
+                                            <div className="mb-6 text-[var(--color-accent)] group-hover:scale-110 transition-transform origin-left">{item.icon}</div>
+                                            <h4 className="font-mono text-lg font-bold mb-2">{item.title}</h4>
+                                            <p className="text-[var(--color-text-muted)] text-sm">{item.desc}</p>
                                         </motion.div>
+                                    ))}
+                                </motion.div>
+                            </div>
+                        </div>
+                    </motion.section>
+
+                    {/* SECTION 5: PIPELINE */}
+                    <motion.section className="py-32 px-8 border-b border-[var(--color-line)] bg-[var(--color-panel)]">
+                         <div className="max-w-7xl mx-auto">
+                            <div className="text-center mb-24">
+                                <h3 className="text-[var(--color-text-muted)] font-mono text-xs tracking-widest mb-4">03 // THE PIPELINE</h3>
+                                <h2 className="text-4xl md:text-5xl font-serif">From Raw Data to Final Cut</h2>
+                            </div>
+                            
+                            <div className="relative">
+                                <div className="absolute top-1/2 left-0 w-full h-px bg-[var(--color-line)] -translate-y-1/2 hidden md:block" />
+                                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                                    {[
+                                        { step: "01", title: "Ingest", desc: "Upload novel or screenplay." },
+                                        { step: "02", title: "Parse", desc: "AI extracts scenes & assets." },
+                                        { step: "03", title: "Visualize", desc: "Generate 2K storyboards." },
+                                        { step: "04", title: "Render", desc: "Synthesize 1080p video." }
+                                    ].map((s, i) => (
+                                        <div key={i} className="relative bg-[var(--color-card)] p-8 border border-[var(--color-line)] hover:border-[var(--color-accent)] transition-colors group">
+                                            <div className="text-6xl font-serif text-[var(--color-line)] group-hover:text-[var(--color-accent)] transition-colors mb-4 opacity-20">{s.step}</div>
+                                            <h4 className="font-bold mb-2">{s.title}</h4>
+                                            <p className="text-xs text-[var(--color-text-muted)] font-mono">{s.desc}</p>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
                          </div>
                     </motion.section>
 
-                    {/* SECTION 5: PIPELINE */}
-                    <motion.section 
-                        className="py-40 px-8 border-b border-[#222] relative overflow-hidden"
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={staggerContainer}
-                    >
-                        <div className="max-w-6xl mx-auto relative z-10">
-                            <motion.h3 variants={fadeInUp} className="font-mono text-xs tracking-widest mb-24 text-center text-gray-500">THE PIPELINE</motion.h3>
-                            <div className="flex flex-col md:flex-row justify-between items-center gap-12 md:gap-0">
-                                <motion.div variants={fadeInUp} className="text-center group w-full md:w-1/3">
-                                    <div className="w-24 h-24 border border-[#333] rounded-full flex items-center justify-center mx-auto mb-8 bg-[#0A0A0A] text-gray-400 group-hover:border-[var(--color-accent)] group-hover:text-white transition-all">
-                                        <span className="font-mono text-xl">01</span>
-                                    </div>
-                                    <h4 className="font-serif text-2xl mb-3">Input</h4>
-                                    <p className="font-mono text-xs text-gray-600 uppercase tracking-widest">Drag & Drop Novel</p>
-                                </motion.div>
-                                <motion.div variants={fadeInUp} className="h-px w-full md:w-24 bg-gradient-to-r from-[#333] via-[var(--color-accent)] to-[#333] opacity-30"></motion.div>
-                                <motion.div variants={fadeInUp} className="text-center group w-full md:w-1/3">
-                                    <div className="w-24 h-24 border border-[var(--color-accent)] rounded-full flex items-center justify-center mx-auto mb-8 bg-[#0A0A0A] text-white shadow-[0_0_30px_rgba(255,69,0,0.2)] group-hover:scale-110 transition-transform">
-                                         <span className="font-mono text-xl">02</span>
-                                    </div>
-                                    <h4 className="font-serif text-2xl mb-3">Compile</h4>
-                                    <p className="font-mono text-xs text-gray-600 uppercase tracking-widest">AI Structure Analysis</p>
-                                </motion.div>
-                                <motion.div variants={fadeInUp} className="h-px w-full md:w-24 bg-gradient-to-r from-[#333] via-[var(--color-accent)] to-[#333] opacity-30"></motion.div>
-                                <motion.div variants={fadeInUp} className="text-center group w-full md:w-1/3">
-                                    <div className="w-24 h-24 border border-[#333] rounded-full flex items-center justify-center mx-auto mb-8 bg-[#0A0A0A] text-gray-400 group-hover:border-[var(--color-accent)] group-hover:text-white transition-all">
-                                         <span className="font-mono text-xl">03</span>
-                                    </div>
-                                    <h4 className="font-serif text-2xl mb-3">Render</h4>
-                                    <p className="font-mono text-xs text-gray-600 uppercase tracking-widest">4K Video Output</p>
-                                </motion.div>
-                            </div>
-                        </div>
-                    </motion.section>
-
-                    {/* SECTION 6: FAQ */}
-                    <motion.section 
-                        className="py-32 px-8 border-b border-[#222]"
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                    >
+                     {/* SECTION 6: LOGS */}
+                     <motion.section className="py-32 px-8 border-b border-[var(--color-line)]">
                         <div className="max-w-4xl mx-auto">
-                            <motion.h3 variants={fadeInUp} className="font-mono text-xs tracking-widest mb-12 text-gray-500">KNOWLEDGE BASE</motion.h3>
-                            <div className="space-y-2">
-                                {FAQs.map((faq, idx) => (
-                                    <motion.div variants={fadeInUp} key={idx} className="border border-[#222] bg-[#0A0A0A]">
+                             <div className="flex items-center gap-4 mb-12 border-b border-[var(--color-line)] pb-4">
+                                <TerminalIcon className="text-[var(--color-accent)]" />
+                                <h3 className="font-mono text-sm tracking-widest">VERIFIED_USER_LOGS</h3>
+                             </div>
+                             <div className="space-y-4 font-mono text-xs md:text-sm">
+                                {[
+                                    { user: "DIR_NOLAN", msg: "Latency reduced by 94%. Pre-viz complete in 4 hours instead of 4 weeks.", status: "SUCCESS" },
+                                    { user: "PROD_A24", msg: "Asset consistency check passed. Character 'Evelyn' stable across 42 shots.", status: "VERIFIED" },
+                                    { user: "INDIE_DEV", msg: "Render quality exceeds expectations. Veo 3.1 handling complex lighting vectors perfectly.", status: "OPTIMAL" }
+                                ].map((log, i) => (
+                                    <div key={i} className="flex gap-4 p-4 bg-[var(--color-card)] border border-[var(--color-line)]">
+                                        <span className="text-[var(--color-text-muted)] shrink-0">{new Date().toLocaleDateString()}</span>
+                                        <span className="text-[var(--color-accent)] shrink-0">[{log.user}]</span>
+                                        <span className="flex-1 text-[var(--color-text-muted)]">"{log.msg}"</span>
+                                        <span className="text-green-500 font-bold hidden md:block">[{log.status}]</span>
+                                    </div>
+                                ))}
+                             </div>
+                        </div>
+                     </motion.section>
+
+                    {/* SECTION 7: FAQ */}
+                    <motion.section className="py-32 px-8 border-b border-[var(--color-line)] bg-[var(--color-card)]">
+                        <div className="max-w-3xl mx-auto">
+                            <h2 className="text-3xl font-serif mb-12 text-center">Knowledge Base</h2>
+                            <div className="space-y-px bg-[var(--color-line)] border border-[var(--color-line)]">
+                                {FAQs.map((faq, i) => (
+                                    <div key={i} className="bg-[var(--color-void)]">
                                         <button 
-                                            onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                                            className="w-full flex items-center justify-between p-6 text-left hover:bg-[#111] transition-colors"
+                                            onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                                            className="w-full flex items-center justify-between p-6 hover:bg-[var(--color-panel)] transition-colors text-left"
                                         >
-                                            <span className="font-mono text-sm text-gray-300 flex gap-4">
-                                                <span className="text-[var(--color-accent)] opacity-50">0{idx+1}</span>
-                                                {faq.q}
-                                            </span>
-                                            {openFaq === idx ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
+                                            <span className="font-mono text-sm">{faq.q}</span>
+                                            {openFaq === i ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
                                         </button>
                                         <AnimatePresence>
-                                            {openFaq === idx && (
+                                            {openFaq === i && (
                                                 <motion.div 
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: 'auto', opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
+                                                    initial={{ height: 0 }} 
+                                                    animate={{ height: "auto" }} 
+                                                    exit={{ height: 0 }} 
                                                     className="overflow-hidden"
                                                 >
-                                                    <div className="p-6 pt-0 pl-12 text-sm font-serif text-gray-500 leading-relaxed border-t border-[#222] border-dashed">
-                                                        <div className="mt-4">{faq.a}</div>
+                                                    <div className="p-6 pt-0 text-[var(--color-text-muted)] text-sm leading-relaxed border-t border-[var(--color-line)] border-dashed">
+                                                        {faq.a}
                                                     </div>
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
-                                    </motion.div>
+                                    </div>
                                 ))}
                             </div>
                         </div>
                     </motion.section>
 
-                    {/* SECTION 7: FINAL CTA */}
-                    <section className="py-40 px-8 flex flex-col items-center justify-center text-center bg-[#050505]">
-                        <motion.h2 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            whileInView={{ scale: 1, opacity: 1 }}
-                            transition={{ duration: 0.8 }}
-                            className="text-7xl font-serif mb-12 text-white"
-                        >
-                            Ready to Direct?
-                        </motion.h2>
-                        <motion.button 
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
+                    {/* SECTION 8: FINAL CTA */}
+                    <section className="py-40 px-8 flex flex-col items-center justify-center text-center">
+                        <h2 className="text-6xl md:text-8xl font-serif mb-12 mix-blend-difference">Ready to Direct?</h2>
+                        <button 
                             onClick={() => setView('AUTH')}
-                            className="bg-[var(--color-accent)] text-black px-12 py-5 font-mono font-bold tracking-widest hover:bg-white transition-colors shadow-[0_0_50px_rgba(255,69,0,0.3)]"
+                            className="text-xl md:text-2xl font-mono border-b-2 border-[var(--color-accent)] pb-2 hover:text-[var(--color-accent)] transition-colors"
                         >
-                            LAUNCH CONSOLE
-                        </motion.button>
+                            INITIALIZE_PIPELINE &rarr;
+                        </button>
                     </section>
 
                     {/* FOOTER */}
-                    <footer className="py-16 px-8 border-t border-[#222] bg-[#020202] text-[10px] font-mono text-gray-600">
-                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-                            <div className="flex items-center gap-3">
-                                <Film size={16} /> <span className="tracking-widest">CINE-OS SYSTEMS INC. © 2025</span>
+                    <footer className="border-t border-[var(--color-line)] py-12 px-8 bg-[var(--color-card)]">
+                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                            <div>
+                                <h4 className="font-bold font-serif text-lg mb-2">CINE-OS</h4>
+                                <p className="font-mono text-xs text-[var(--color-text-muted)]">
+                                    Build v4.0.1 (Stable)<br/>
+                                    &copy; 2024 CINE-OS Inc.
+                                </p>
                             </div>
-                            <div className="flex gap-12">
-                                <a href="#" className="hover:text-white transition-colors">PRIVACY_PROTOCOL</a>
-                                <a href="#" className="hover:text-white transition-colors">TERMS_OF_SERVICE</a>
-                                <a href="#" className="hover:text-white transition-colors">API_STATUS</a>
-                            </div>
-                            <div className="flex gap-6">
-                                <Github size={16} className="hover:text-white cursor-pointer"/>
-                                <Twitter size={16} className="hover:text-white cursor-pointer"/>
+                            <div className="flex gap-8 text-xs font-mono text-[var(--color-text-muted)]">
+                                <a href="#" className="hover:text-[var(--color-accent)]">TERMS_OF_SERVICE</a>
+                                <a href="#" className="hover:text-[var(--color-accent)]">PRIVACY_PROTOCOL</a>
+                                <a href="#" className="hover:text-[var(--color-accent)]">SYSTEM_STATUS</a>
                             </div>
                         </div>
                     </footer>
                 </motion.div>
             )}
 
-            {/* VIEW 2: AUTH */}
+            {/* VIEW 2: AUTH (BETTER AUTH STYLE) */}
             {view === 'AUTH' && (
-                <motion.div 
+                <motion.div
                     key="auth"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col items-center justify-center p-8 bg-[#050505]"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.05 }}
+                    className="flex-1 flex items-center justify-center p-6"
                 >
-                    <div className="w-full max-w-md border border-[#333] bg-[#0A0A0A] p-8 relative overflow-hidden">
-                        {/* Scanning Line Animation */}
-                        <motion.div 
-                            initial={{ top: 0 }}
-                            animate={{ top: '100%' }}
-                            transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
-                            className="absolute left-0 w-full h-px bg-[var(--color-accent)] opacity-50 shadow-[0_0_10px_var(--color-accent)]"
-                        />
+                    <div className="w-full max-w-md bg-[var(--color-card)] border border-[var(--color-line)] p-8 relative overflow-hidden">
+                        {/* Decorative Scanner Line */}
+                        <div className="absolute top-0 left-0 w-full h-1 bg-[var(--color-accent)]/50 animate-[shimmer_2s_infinite]" />
                         
-                        <div className="flex justify-center mb-8">
-                            <Shield size={48} className="text-[var(--color-accent)] opacity-80" />
+                        <div className="text-center mb-8">
+                            <div className="w-16 h-16 border border-[var(--color-line)] rounded-full mx-auto mb-4 flex items-center justify-center relative">
+                                <div className="absolute inset-0 border-t border-[var(--color-accent)] rounded-full animate-spin"></div>
+                                <Shield className="w-6 h-6 text-[var(--color-text-muted)]" />
+                            </div>
+                            <h2 className="font-serif text-2xl">Identity Verification</h2>
+                            <p className="font-mono text-xs text-[var(--color-text-muted)] mt-2">SECURE_HANDSHAKE_PROTOCOL_INITIATED</p>
                         </div>
-                        
-                        <h2 className="text-2xl font-serif text-center mb-2">Identity Verification</h2>
-                        <p className="text-xs font-mono text-center text-gray-500 mb-8 tracking-widest">ESTABLISH SECURE HANDSHAKE</p>
 
                         <div className="space-y-4">
-                             <div className="space-y-2">
-                                <label className="text-[10px] font-mono text-gray-400">EMAIL_ADDRESS</label>
-                                <div className="flex items-center border border-[#333] bg-[#050505] p-3 focus-within:border-[var(--color-accent)] transition-colors">
-                                    <Mail size={14} className="text-gray-600 mr-3" />
-                                    <input type="email" placeholder="director@cine-os.io" className="bg-transparent border-none outline-none text-xs font-mono w-full text-white placeholder-gray-700" />
+                            <button 
+                                onClick={() => handleAuth('GOOGLE')}
+                                className="w-full flex items-center justify-center gap-3 p-3 border border-[var(--color-line)] hover:bg-[var(--color-panel)] hover:border-[var(--color-text-main)] transition-colors font-mono text-xs"
+                            >
+                                <Globe size={14} /> CONTINUE_WITH_GOOGLE
+                            </button>
+                            <button 
+                                onClick={() => handleAuth('GITHUB')}
+                                className="w-full flex items-center justify-center gap-3 p-3 border border-[var(--color-line)] hover:bg-[var(--color-panel)] hover:border-[var(--color-text-main)] transition-colors font-mono text-xs"
+                            >
+                                <Github size={14} /> CONTINUE_WITH_GITHUB
+                            </button>
+                            
+                            <div className="relative py-4">
+                                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[var(--color-line)]"></div></div>
+                                <div className="relative flex justify-center"><span className="bg-[var(--color-card)] px-2 text-[10px] text-[var(--color-text-muted)] font-mono">OR_USE_MAGIC_LINK</span></div>
+                            </div>
+
+                            <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleAuth('EMAIL'); }}>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-mono text-[var(--color-text-muted)] ml-1">EMAIL_ADDRESS</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                                        <input 
+                                            type="email" 
+                                            className="w-full bg-[var(--color-void)] border border-[var(--color-line)] p-3 pl-10 text-sm font-mono focus:outline-none focus:border-[var(--color-accent)] transition-colors placeholder:text-[var(--color-text-muted)]/50"
+                                            placeholder="director@studio.io"
+                                        />
+                                    </div>
                                 </div>
-                             </div>
-                             
-                             <div className="space-y-2">
-                                <label className="text-[10px] font-mono text-gray-400">ACCESS_KEY (PASSWORD)</label>
-                                <div className="flex items-center border border-[#333] bg-[#050505] p-3 focus-within:border-[var(--color-accent)] transition-colors">
-                                    <Lock size={14} className="text-gray-600 mr-3" />
-                                    <input type="password" placeholder="••••••••••••" className="bg-transparent border-none outline-none text-xs font-mono w-full text-white placeholder-gray-700" />
-                                </div>
-                             </div>
-
-                             <button 
-                                onClick={() => handleAuth('EMAIL')}
-                                className="w-full bg-white text-black font-mono text-xs font-bold py-3 hover:bg-[var(--color-accent)] hover:text-white transition-colors"
-                             >
-                                AUTHENTICATE
-                             </button>
-
-                             <div className="flex items-center gap-4 my-6">
-                                <div className="h-px bg-[#222] flex-1" />
-                                <span className="text-[9px] font-mono text-gray-600">OR CONNECT NEURAL INTERFACE</span>
-                                <div className="h-px bg-[#222] flex-1" />
-                             </div>
-
-                             <div className="grid grid-cols-2 gap-4">
-                                <button onClick={() => handleAuth('GITHUB')} className="flex items-center justify-center gap-2 border border-[#333] p-3 hover:bg-[#111] hover:border-gray-500 transition-colors">
-                                    <Github size={14} />
-                                    <span className="text-[10px] font-mono">GITHUB_NODE</span>
+                                <button type="submit" className="w-full bg-[var(--color-text-main)] text-[var(--color-void)] p-3 font-mono text-xs font-bold hover:bg-[var(--color-accent)] transition-colors">
+                                    SEND_VERIFICATION_PACKET
                                 </button>
-                                <button onClick={() => handleAuth('GOOGLE')} className="flex items-center justify-center gap-2 border border-[#333] p-3 hover:bg-[#111] hover:border-gray-500 transition-colors">
-                                    <Globe size={14} />
-                                    <span className="text-[10px] font-mono">GOOGLE_CLOUD</span>
-                                </button>
-                             </div>
+                            </form>
                         </div>
 
-                        <div className="mt-6 text-center">
-                             <span className="text-[9px] font-mono text-gray-600">ENCRYPTION: AES-256 // SERVER: US-EAST-1</span>
+                        <div className="mt-8 text-center">
+                            <button onClick={() => setView('LANDING')} className="text-[10px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] flex items-center justify-center gap-1 mx-auto">
+                                <ChevronLeft size={10} /> ABORT_SEQUENCE
+                            </button>
                         </div>
                     </div>
                 </motion.div>
             )}
 
-            {/* VIEW 3: DASHBOARD (NEW) */}
-            {view === 'DASHBOARD' && (
+            {/* VIEW 3: DASHBOARD */}
+            {view === 'DASHBOARD' && user && (
                 <motion.div
                     key="dashboard"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="flex-1 flex flex-col p-8 max-w-7xl mx-auto w-full h-[calc(100vh-3.5rem)] overflow-y-auto custom-scrollbar"
+                    className="flex-1 p-8 overflow-y-auto"
                 >
-                    {/* Stats Module */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 pb-8 border-b border-[#333]">
-                         {[
-                             { label: "STORAGE_USED", value: "45%", icon: <HardDrive size={14} className="text-[var(--color-accent)]"/> },
-                             { label: "TOTAL_RENDERS", value: "1,024", icon: <Film size={14} className="text-blue-400"/> },
-                             { label: "GPU_TIME", value: "14h 22m", icon: <Clock size={14} className="text-purple-400"/> },
-                             { label: "SYSTEM_STATUS", value: "ONLINE", icon: <Activity size={14} className="text-green-400"/> },
-                         ].map((stat, i) => (
-                             <div key={i} className="bg-[#0A0A0A] border border-[#222] p-4 flex flex-col justify-between h-24 hover:border-gray-700 transition-colors">
-                                 <div className="flex justify-between items-start">
-                                     <span className="text-[10px] font-mono text-gray-500 tracking-widest">{stat.label}</span>
-                                     {stat.icon}
-                                 </div>
-                                 <span className="text-2xl font-mono text-white">{stat.value}</span>
-                             </div>
-                         ))}
-                    </div>
+                    <div className="max-w-6xl mx-auto space-y-12">
+                        {/* Stats Module */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[
+                                { label: "STORAGE_USED", val: "42%", icon: <HardDrive/> },
+                                { label: "RENDER_CREDITS", val: "8,400", icon: <Zap/> },
+                                { label: "ACTIVE_PROJECTS", val: "03", icon: <Folder/> },
+                                { label: "SYSTEM_LATENCY", val: "12ms", icon: <Activity/> },
+                            ].map((stat, i) => (
+                                <div key={i} className="bg-[var(--color-card)] p-4 border border-[var(--color-line)] flex items-center gap-4">
+                                    <div className="text-[var(--color-accent)] opacity-80">{stat.icon}</div>
+                                    <div>
+                                        <div className="text-[10px] font-mono text-[var(--color-text-muted)]">{stat.label}</div>
+                                        <div className="text-xl font-bold font-mono">{stat.val}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
 
-                    <div className="flex justify-between items-end mb-8">
+                        {/* Projects Grid */}
                         <div>
-                             <h2 className="text-4xl font-serif text-white mb-2">Mission Control</h2>
-                             <p className="text-xs font-mono text-gray-500">SELECT DATA CARTRIDGE TO RESUME</p>
-                        </div>
-                        <button 
-                            onClick={() => setView('IMPORT')}
-                            className="bg-white text-black px-6 py-3 font-mono text-xs font-bold hover:bg-[var(--color-accent)] hover:text-white transition-colors flex items-center gap-2"
-                        >
-                            <Plus size={16} /> NEW PROJECT
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* New Project Card (Alternative Entry) */}
-                        <div 
-                            onClick={() => setView('IMPORT')}
-                            className="border-2 border-dashed border-[#222] bg-transparent flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/5 transition-all group h-64"
-                        >
-                             <div className="w-12 h-12 rounded-full border border-[#333] flex items-center justify-center group-hover:scale-110 transition-transform bg-[#0A0A0A]">
-                                <Plus size={24} className="text-gray-500 group-hover:text-[var(--color-accent)]" />
-                             </div>
-                             <span className="text-xs font-mono text-gray-500 group-hover:text-white tracking-widest">INITIATE SEQUENCE</span>
-                        </div>
-
-                        {/* Project Cards */}
-                        {projects.map((project) => (
-                            <div 
-                                key={project.id}
-                                onClick={() => loadProject(project)}
-                                className="bg-[#0A0A0A] border border-[#222] p-0 cursor-pointer group hover:border-[var(--color-accent)] transition-all h-64 flex flex-col relative overflow-hidden"
-                            >
-                                <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <MoreVertical size={16} className="text-white hover:text-[var(--color-accent)]" />
-                                </div>
-
-                                {/* Thumbnail Mock */}
-                                <div className="h-32 bg-[#111] relative overflow-hidden border-b border-[#222]">
-                                     <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop')] bg-cover opacity-30 grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-110" />
-                                     <div className="absolute bottom-2 left-2 bg-black/80 px-2 py-0.5 text-[9px] font-mono text-white border border-white/10">
-                                         {project.sceneCount} SCENES
-                                     </div>
-                                </div>
-
-                                <div className="p-5 flex-1 flex flex-col justify-between">
-                                    <div>
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="text-[9px] font-mono text-[var(--color-accent)]">{project.id}</span>
-                                            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${
-                                                project.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500' :
-                                                project.status === 'RENDERING' ? 'bg-yellow-500/10 text-yellow-500 animate-pulse' :
-                                                'bg-gray-800 text-gray-500'
-                                            }`}>
-                                                {project.status}
-                                            </span>
-                                        </div>
-                                        <h3 className="text-lg font-serif text-white group-hover:text-[var(--color-accent)] transition-colors truncate">{project.title}</h3>
-                                    </div>
-
-                                    <div>
-                                        <div className="flex justify-between text-[9px] font-mono text-gray-500 mb-1">
-                                            <span>PROGRESS</span>
-                                            <span>{project.progress}%</span>
-                                        </div>
-                                        <div className="h-1 w-full bg-[#222] rounded-full overflow-hidden">
-                                            <div 
-                                                className="h-full bg-white group-hover:bg-[var(--color-accent)] transition-colors duration-500" 
-                                                style={{ width: `${project.progress}%` }} 
-                                            />
-                                        </div>
-                                        <p className="mt-3 text-[9px] font-mono text-gray-600 flex items-center gap-1">
-                                            <Clock size={10} /> EDITED {project.lastModified}
-                                        </p>
-                                    </div>
-                                </div>
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-serif">Mission Control</h2>
+                                <button 
+                                    onClick={() => setView('IMPORT')}
+                                    className="flex items-center gap-2 bg-[var(--color-accent)] text-white px-4 py-2 text-xs font-mono font-bold hover:bg-[var(--color-accent)]/80 transition-colors"
+                                >
+                                    <Plus size={14} /> NEW_PROJECT
+                                </button>
                             </div>
-                        ))}
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {projects.map((proj) => (
+                                    <div 
+                                        key={proj.id} 
+                                        onClick={() => loadProject(proj)}
+                                        className="group bg-[var(--color-card)] border border-[var(--color-line)] cursor-pointer hover:border-[var(--color-accent)] transition-all relative overflow-hidden h-64 flex flex-col"
+                                    >
+                                        <div className="flex-1 bg-[var(--color-panel)] relative p-6 flex flex-col justify-between">
+                                            <div className="flex justify-between items-start">
+                                                <div className="w-8 h-8 rounded border border-[var(--color-line)] flex items-center justify-center text-[var(--color-text-muted)]">
+                                                    <Film size={16} />
+                                                </div>
+                                                <span className={`text-[10px] font-mono px-2 py-1 border ${
+                                                    proj.status === 'COMPLETED' ? 'border-green-500 text-green-500' :
+                                                    proj.status === 'RENDERING' ? 'border-yellow-500 text-yellow-500' : 'border-[var(--color-line)] text-[var(--color-text-muted)]'
+                                                }`}>
+                                                    {proj.status}
+                                                </span>
+                                            </div>
+                                            <h3 className="font-serif text-xl group-hover:text-[var(--color-accent)] transition-colors">{proj.title}</h3>
+                                        </div>
+                                        <div className="p-4 border-t border-[var(--color-line)] bg-[var(--color-card)] text-[10px] font-mono text-[var(--color-text-muted)] flex justify-between items-center">
+                                            <span>MODIFIED: {proj.lastModified}</span>
+                                            <span>{proj.sceneCount} SCENES</span>
+                                        </div>
+                                        {/* Progress Bar for Rendering */}
+                                        {proj.status === 'RENDERING' && (
+                                            <div className="absolute bottom-0 left-0 h-1 bg-[var(--color-accent)]" style={{ width: `${proj.progress}%` }} />
+                                        )}
+                                    </div>
+                                ))}
+                                
+                                {/* Dashed Placeholder for New Project */}
+                                <button 
+                                    onClick={() => setView('IMPORT')}
+                                    className="border-2 border-dashed border-[var(--color-line)] h-64 flex flex-col items-center justify-center gap-4 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)] transition-colors"
+                                >
+                                    <Plus size={32} />
+                                    <span className="font-mono text-xs tracking-widest">INITIATE_NEW_TIMELINE</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </motion.div>
             )}
 
-            {/* VIEW 4: IMPORT SELECTION */}
+            {/* VIEW 4: SELECTION / IMPORT (DUAL MODE) */}
             {view === 'IMPORT' && (
                 <motion.div 
                     key="import"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="flex-1 flex flex-col items-center justify-center p-8 max-w-7xl mx-auto w-full"
+                    exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center p-8"
                 >
-                    <motion.div 
-                         initial={{ y: 20, opacity: 0 }}
-                         animate={{ y: 0, opacity: 1 }}
-                         className="text-center mb-16"
-                    >
-                        <h2 className="text-4xl font-serif mb-4">Select Source Material</h2>
-                        <p className="text-gray-500 font-mono text-xs">CHOOSE INPUT FORMAT FOR PROCESSING</p>
-                    </motion.div>
+                    <div className="text-center mb-12">
+                        <h2 className="text-4xl font-serif mb-4">Import Source Material</h2>
+                        <p className="font-mono text-xs text-[var(--color-text-muted)] tracking-widest">SELECT_DATA_FORMAT</p>
+                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-                        {/* OPTION A: NOVEL */}
-                        <motion.div 
-                            initial={{ x: -50, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.1 }}
-                            className="group relative border border-[#222] bg-[#0A0A0A] hover:border-[var(--color-accent)] transition-all duration-500 cursor-pointer h-[400px] flex flex-col p-8"
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl w-full">
+                        {/* Option 1: Novel */}
+                        <div 
+                            className="group relative border border-[var(--color-line)] bg-[var(--color-card)] p-12 hover:border-[var(--color-accent)] transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-6"
                             onClick={() => novelInputRef.current?.click()}
                         >
-                            <input type="file" ref={novelInputRef} className="hidden" accept=".txt,.md" onChange={(e) => handleFileUpload(e, 'NOVEL')} />
-                            <div className="absolute top-4 right-4 opacity-20 group-hover:opacity-100 transition-opacity text-[var(--color-accent)]">
-                                <Book size={24} />
-                            </div>
-                            
-                            <div className="mt-auto">
-                                <div className="w-12 h-1 bg-gray-800 group-hover:bg-[var(--color-accent)] mb-6 transition-colors" />
-                                <h3 className="text-2xl font-serif mb-2 text-gray-200 group-hover:text-white">Import Manuscript</h3>
-                                <p className="text-xs font-mono text-gray-500 mb-6 leading-relaxed">
-                                    Raw novel text. The system will act as a Screenwriter to adapt narrative into scenes, extract assets, and format dialogue.
+                             <div className="w-16 h-16 border border-[var(--color-line)] rounded-full flex items-center justify-center text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] group-hover:border-[var(--color-accent)] transition-colors">
+                                <Book size={32} />
+                             </div>
+                             <div>
+                                <h3 className="text-xl font-serif font-bold mb-2">Raw Manuscript</h3>
+                                <p className="text-xs font-mono text-[var(--color-text-muted)] leading-relaxed px-8">
+                                    AI will analyze text, extract characters, identify locations, and format into a screenplay automatically.
                                 </p>
-                                <span className="text-[10px] font-mono border border-[#333] px-2 py-1 text-gray-400 group-hover:text-[var(--color-accent)] group-hover:border-[var(--color-accent)] transition-colors">
-                                    MODE: ADAPTATION
-                                </span>
-                            </div>
-                        </motion.div>
+                             </div>
+                             <div className="mt-4 px-4 py-2 bg-[var(--color-void)] border border-[var(--color-line)] font-mono text-[10px] text-[var(--color-text-muted)] group-hover:text-[var(--color-text-main)] transition-colors">
+                                .TXT / .MD / .DOCX
+                             </div>
+                             <input 
+                                type="file" 
+                                ref={novelInputRef} 
+                                className="hidden" 
+                                accept=".txt,.md" 
+                                onChange={(e) => handleFileUpload(e, 'NOVEL')} 
+                            />
+                        </div>
 
-                        {/* OPTION B: SCRIPT */}
-                        <motion.div 
-                            initial={{ x: 50, opacity: 0 }}
-                            animate={{ x: 0, opacity: 1 }}
-                            transition={{ delay: 0.2 }}
-                            className="group relative border border-[#222] bg-[#0A0A0A] hover:border-[var(--color-accent)] transition-all duration-500 cursor-pointer h-[400px] flex flex-col p-8"
+                         {/* Option 2: Script */}
+                         <div 
+                            className="group relative border border-[var(--color-line)] bg-[var(--color-card)] p-12 hover:border-[var(--color-accent)] transition-all cursor-pointer flex flex-col items-center justify-center text-center gap-6"
                             onClick={() => scriptInputRef.current?.click()}
                         >
-                            <input type="file" ref={scriptInputRef} className="hidden" accept=".txt,.md" onChange={(e) => handleFileUpload(e, 'SCRIPT')} />
-                            <div className="absolute top-4 right-4 opacity-20 group-hover:opacity-100 transition-opacity text-[var(--color-accent)]">
-                                <FileType size={24} />
-                            </div>
-                            
-                            <div className="mt-auto">
-                                <div className="w-12 h-1 bg-gray-800 group-hover:bg-[var(--color-accent)] mb-6 transition-colors" />
-                                <h3 className="text-2xl font-serif mb-2 text-gray-200 group-hover:text-white">Import Screenplay</h3>
-                                <p className="text-xs font-mono text-gray-500 mb-6 leading-relaxed">
-                                    Formatted script text. The system will parse existing Sluglines and structure, strictly preserving your dialogue and pacing.
+                             <div className="w-16 h-16 border border-[var(--color-line)] rounded-full flex items-center justify-center text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)] group-hover:border-[var(--color-accent)] transition-colors">
+                                <FileType size={32} />
+                             </div>
+                             <div>
+                                <h3 className="text-xl font-serif font-bold mb-2">Formatted Screenplay</h3>
+                                <p className="text-xs font-mono text-[var(--color-text-muted)] leading-relaxed px-8">
+                                    AI will parse existing Scene Headings, Action, and Dialogue to build the visual breakdown immediately.
                                 </p>
-                                <span className="text-[10px] font-mono border border-[#333] px-2 py-1 text-gray-400 group-hover:text-[var(--color-accent)] group-hover:border-[var(--color-accent)] transition-colors">
-                                    MODE: PARSE_ONLY
-                                </span>
-                            </div>
-                        </motion.div>
+                             </div>
+                             <div className="mt-4 px-4 py-2 bg-[var(--color-void)] border border-[var(--color-line)] font-mono text-[10px] text-[var(--color-text-muted)] group-hover:text-[var(--color-text-main)] transition-colors">
+                                .TXT / .PDF (Parsed)
+                             </div>
+                             <input 
+                                type="file" 
+                                ref={scriptInputRef} 
+                                className="hidden" 
+                                accept=".txt,.md" 
+                                onChange={(e) => handleFileUpload(e, 'SCRIPT')} 
+                            />
+                        </div>
                     </div>
+
+                    <button onClick={() => setView('DASHBOARD')} className="mt-12 text-[10px] font-mono text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]">
+                         &larr; RETURN_TO_DASHBOARD
+                    </button>
                 </motion.div>
             )}
 
-            {/* VIEW 5: WORKSPACE (OPTIMIZED LAYOUT) */}
+            {/* VIEW 5: WORKSPACE (EDITOR) */}
             {view === 'WORKSPACE' && (
                 <motion.div 
                     key="workspace"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="flex-1 flex overflow-hidden h-full relative"
+                    className="flex flex-1 overflow-hidden"
                 >
-                     {state === ProcessingState.ANALYZING_SCRIPT ? (
-                         <div className="flex-1 flex items-center justify-center flex-col gap-8">
-                             <Loader text="DECONSTRUCTING TEXT" />
-                             <p className="text-xs font-mono text-gray-500 animate-pulse">Running Narrative Analysis...</p>
+                    {/* LEFT PANEL: ASSETS */}
+                    <motion.aside 
+                        animate={{ width: isAssetsPanelOpen ? 300 : 0, opacity: isAssetsPanelOpen ? 1 : 0 }}
+                        className="bg-[var(--color-panel)] border-r border-[var(--color-line)] overflow-hidden flex flex-col shrink-0"
+                    >
+                         <div className="p-4 border-b border-[var(--color-line)] flex items-center justify-between min-w-[300px]">
+                            <h2 className="text-xs font-bold font-mono tracking-widest flex items-center gap-2">
+                                <Users size={14} /> CASTING_DECK
+                            </h2>
+                            <span className="text-[10px] text-[var(--color-text-muted)]">{scriptData?.assets.length || 0} ITEMS</span>
                          </div>
-                     ) : !scriptData ? (
-                        <div className="flex-1 flex items-center justify-center">
-                            <p className="text-red-500 font-mono">ERROR: NO DATA LOADED</p>
-                        </div>
-                     ) : (
-                        <>
-                            {/* PANEL 1: ASSETS (COLLAPSIBLE SIDEBAR) */}
-                            <motion.div 
-                                animate={{ width: isAssetsPanelOpen ? 280 : 40 }}
-                                className="border-r border-[#333] flex flex-col bg-[#080808] flex-none relative transition-all duration-300 ease-in-out"
-                            >
-                                <div className="flex items-center gap-2 p-3 border-b border-[#333] h-[45px] overflow-hidden whitespace-nowrap">
-                                    <Users className="w-3 h-3 text-gray-400 shrink-0" />
-                                    <motion.h3 
-                                        animate={{ opacity: isAssetsPanelOpen ? 1 : 0 }}
-                                        className="font-mono text-[10px] text-gray-400 tracking-widest"
-                                    >
-                                        CASTING
-                                    </motion.h3>
-                                </div>
-                                
-                                <button 
-                                    onClick={() => setIsAssetsPanelOpen(!isAssetsPanelOpen)}
-                                    className="absolute -right-3 top-10 bg-[#333] border border-[#222] rounded-full p-0.5 z-20 text-gray-400 hover:text-white hover:bg-[var(--color-accent)] transition-colors"
-                                >
-                                    <ChevronLeft size={12} className={`transition-transform duration-300 ${!isAssetsPanelOpen ? 'rotate-180' : ''}`} />
-                                </button>
-
-                                <div className={`flex-1 overflow-y-auto custom-scrollbar pb-20 ${!isAssetsPanelOpen ? 'hidden' : ''}`}>
-                                    <div className="p-3 space-y-3">
-                                        {scriptData.assets.map(asset => (
-                                            <div key={asset.id} className="bg-[#111] border border-[#222] p-3 rounded-sm group hover:border-gray-600 transition-colors">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <span className="font-bold text-[11px] text-[var(--color-accent)] block leading-tight">{asset.name}</span>
-                                                    <span className="text-[9px] bg-[#222] px-1.5 py-0.5 rounded text-gray-400">{asset.type[0]}</span>
-                                                </div>
-                                                <p className="text-[10px] text-gray-500 leading-snug line-clamp-3 group-hover:line-clamp-none transition-all">
-                                                    {asset.visualDescription}
-                                                </p>
-                                            </div>
-                                        ))}
+                         <div className="flex-1 overflow-y-auto p-4 space-y-4 min-w-[300px] custom-scrollbar">
+                            {scriptData?.assets.map(asset => (
+                                <div key={asset.id} className="p-3 border border-[var(--color-line)] bg-[var(--color-card)] hover:border-[var(--color-accent)] transition-colors group">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <span className={`text-[10px] px-1.5 py-0.5 border ${
+                                            asset.type === 'CHARACTER' ? 'border-orange-500/50 text-orange-500' : 
+                                            asset.type === 'LOCATION' ? 'border-blue-500/50 text-blue-500' : 'border-gray-500 text-gray-500'
+                                        }`}>
+                                            {asset.type.substring(0, 1)}
+                                        </span>
                                     </div>
+                                    <h3 className="font-bold text-sm mb-1 text-[var(--color-text-main)]">{asset.name}</h3>
+                                    <p className="text-[10px] text-[var(--color-text-muted)] line-clamp-3 group-hover:text-[var(--color-text-main)] transition-colors">
+                                        {asset.visualDescription}
+                                    </p>
                                 </div>
-                            </motion.div>
+                            ))}
+                         </div>
+                    </motion.aside>
 
-                            {/* PANEL 2: SCENE LIST (FIXED WIDTH, REFINED DENSITY) */}
-                            <div className="w-96 border-r border-[#333] flex flex-col bg-[#050505] flex-none z-10">
-                                <div className="flex items-center gap-2 p-3 border-b border-[#333] h-[45px]">
-                                    <FileText className="w-3 h-3 text-gray-400" />
-                                    <h3 className="font-mono text-[10px] text-gray-400 tracking-widest">SCENE LIST</h3>
+                    {/* COLLAPSE TOGGLE */}
+                    <button 
+                        onClick={() => setIsAssetsPanelOpen(!isAssetsPanelOpen)}
+                        className="w-4 bg-[var(--color-void)] border-r border-[var(--color-line)] flex items-center justify-center hover:bg-[var(--color-accent)] hover:text-white transition-colors z-20"
+                    >
+                        {isAssetsPanelOpen ? <ChevronLeft size={10} /> : <ChevronRight size={10} />}
+                    </button>
+
+                    {/* MIDDLE PANEL: SCRIPT / SCENES */}
+                    <section className="flex-1 bg-[var(--color-void)] border-r border-[var(--color-line)] flex flex-col overflow-hidden relative">
+                         <div className="p-4 border-b border-[var(--color-line)] flex items-center justify-between bg-[var(--color-void)] z-10">
+                            <h2 className="text-xs font-bold font-mono tracking-widest flex items-center gap-2">
+                                <FileText size={14} /> SCRIPT_SEQUENCE
+                            </h2>
+                            {state === ProcessingState.ANALYZING_SCRIPT && <Loader text="PARSING" />}
+                         </div>
+                         
+                         <div className="flex-1 overflow-y-auto custom-scrollbar">
+                            {/* Empty State */}
+                            {scriptData?.scenes.length === 0 && state !== ProcessingState.ANALYZING_SCRIPT && (
+                                <div className="h-full flex flex-col items-center justify-center text-[var(--color-text-muted)] gap-4">
+                                    <FileText size={48} className="opacity-20" />
+                                    <p className="font-mono text-xs">NO SEQUENCE DATA</p>
                                 </div>
-                                
-                                <div className="flex-1 overflow-y-auto custom-scrollbar pb-20">
-                                    {scriptData.scenes.map((scene) => (
-                                        <div key={scene.id} className="border-b border-[#222]">
-                                            {/* Scene Header */}
-                                            <div 
-                                                onClick={() => toggleScene(scene.id)}
-                                                className={`
-                                                    p-3 cursor-pointer flex items-center justify-between group transition-colors sticky top-0 z-10 border-b border-[#222]
-                                                    ${selectedSceneId === scene.id ? 'bg-[#1a1a1a] border-l-2 border-l-[var(--color-accent)] pl-[10px]' : 'bg-[#0A0A0A] hover:bg-[#111] border-l-2 border-l-transparent'}
-                                                `}
-                                            >
-                                                <div className="flex flex-col gap-0.5">
-                                                    <h4 className={`font-bold text-[11px] font-mono transition-colors ${selectedSceneId === scene.id ? 'text-white' : 'text-gray-400 group-hover:text-gray-200'}`}>
-                                                        {scene.slugline}
-                                                    </h4>
-                                                    <span className="text-[9px] text-gray-600">{scene.beats.length} BEATS</span>
-                                                </div>
-                                                <div className={`text-gray-600 group-hover:text-white transition-transform duration-200 ${scene.isExpanded ? 'rotate-180' : ''}`}>
-                                                    <ChevronDown size={14} />
-                                                </div>
+                            )}
+
+                            <div className="pb-24"> {/* Padding for terminal */}
+                                {scriptData?.scenes.map((scene) => (
+                                    <div key={scene.id} className="border-b border-[var(--color-line)]">
+                                        {/* SCENE HEADER (Sticky) */}
+                                        <div 
+                                            className={`sticky top-0 z-10 px-6 py-4 flex items-center justify-between cursor-pointer border-l-4 transition-colors ${
+                                                selectedSceneId === scene.id ? 'bg-[var(--color-card)] border-l-[var(--color-accent)]' : 'bg-[var(--color-void)] border-l-transparent hover:bg-[var(--color-card)]'
+                                            }`}
+                                            onClick={() => toggleScene(scene.id)}
+                                        >
+                                            <h3 className="font-bold font-mono text-sm uppercase truncate max-w-[80%]">
+                                                {scene.slugline}
+                                            </h3>
+                                            <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
+                                                <span className="text-[10px]">{scene.beats.length} BEATS</span>
+                                                {scene.isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                                             </div>
+                                        </div>
 
-                                            {/* Nested Beats */}
-                                            <AnimatePresence>
-                                                {scene.isExpanded && (
-                                                    <motion.div 
-                                                        initial={{ height: 0, opacity: 0 }}
-                                                        animate={{ height: 'auto', opacity: 1 }}
-                                                        exit={{ height: 0, opacity: 0 }}
-                                                        className="overflow-hidden bg-black/50"
-                                                    >
-                                                        {scene.beats.map((beat, idx) => (
-                                                            <div 
-                                                                key={beat.id}
-                                                                onClick={() => handleBeatSelect(scene, beat)}
-                                                                className={`
-                                                                    p-2 pl-6 border-l border-[#222] cursor-pointer transition-all flex gap-3
-                                                                    ${selectedBeatId === beat.id 
-                                                                    ? 'bg-[var(--color-accent)]/10 text-white' 
-                                                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'}
-                                                                `}
-                                                            >
-                                                                <span className="font-mono text-[9px] opacity-40 shrink-0 mt-0.5">{String(idx + 1).padStart(2, '0')}</span>
-                                                                <div className="flex-1 min-w-0">
-                                                                    <p className="text-[10px] leading-relaxed line-clamp-2">
-                                                                        {beat.description}
-                                                                    </p>
+                                        {/* BEATS LIST */}
+                                        <AnimatePresence>
+                                            {scene.isExpanded && (
+                                                <motion.div 
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="bg-[var(--color-panel)]/30 overflow-hidden"
+                                                >
+                                                    {scene.beats.map((beat) => (
+                                                        <div 
+                                                            key={beat.id}
+                                                            onClick={() => handleBeatSelect(scene, beat)}
+                                                            className={`px-8 py-3 border-b border-[var(--color-line)]/50 cursor-pointer transition-colors relative group ${
+                                                                selectedBeatId === beat.id 
+                                                                    ? 'bg-[var(--color-accent)]/10 text-[var(--color-text-main)]' 
+                                                                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] hover:bg-[var(--color-void)]'
+                                                            }`}
+                                                        >
+                                                            <div className="flex justify-between items-start gap-4">
+                                                                <p className="font-serif text-sm leading-relaxed line-clamp-2 pointer-events-none">
+                                                                    {beat.description}
+                                                                </p>
+                                                                <div className="shrink-0 flex flex-col items-end gap-1">
+                                                                    <span className="text-[9px] font-mono opacity-50">BEAT {beat.id.split('_').pop()}</span>
                                                                     {beat.shots.length > 0 && (
-                                                                        <div className="mt-1 flex items-center gap-1">
-                                                                            <Camera size={8} className="text-[var(--color-accent)]" />
-                                                                            <span className="text-[8px] text-[var(--color-accent)]">{beat.shots.length} SHOTS</span>
-                                                                        </div>
+                                                                         <span className="text-[9px] font-mono bg-[var(--color-line)] px-1 rounded text-[var(--color-text-main)]">
+                                                                            {beat.shots.length} SHOTS
+                                                                         </span>
                                                                     )}
                                                                 </div>
-                                                                {selectedBeatId === beat.id && <ChevronRight size={12} className="mt-1 shrink-0 text-[var(--color-accent)]" />}
                                                             </div>
-                                                        ))}
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* PANEL 3: SHOT EDITOR (DYNAMIC WIDTH) */}
-                            <div className="flex-1 flex flex-col bg-[#080808] min-w-0">
-                                <div className="flex items-center justify-between p-3 border-b border-[#333] h-[45px]">
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <Camera className="w-3 h-3 text-gray-400 shrink-0" />
-                                        <h3 className="font-mono text-[10px] text-gray-400 tracking-widest truncate">
-                                            {getActiveScene() ? `SHOT LIST: ${getActiveScene()?.slugline}` : 'WAITING FOR SELECTION...'}
-                                        </h3>
-                                    </div>
-                                    {state === ProcessingState.GENERATING_SHOTS && (
-                                         <span className="text-[9px] font-mono animate-pulse text-[var(--color-accent)] shrink-0">GENERATING SHOT LIST...</span>
-                                    )}
-                                </div>
-
-                                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar pb-24 bg-[#0A0A0A]">
-                                    {/* Responsive Container for Shots */}
-                                    <div className="max-w-5xl mx-auto space-y-6">
-                                        
-                                        {getActiveBeat()?.shots.map((shot) => (
-                                            <div key={shot.id} className="bg-[#050505] border border-[#222] p-0 flex flex-col md:flex-row group hover:border-[#444] transition-colors rounded-sm overflow-hidden shadow-lg">
-                                                
-                                                {/* Visual Preview Box */}
-                                                <div className="md:w-72 aspect-video bg-black shrink-0 relative border-b md:border-b-0 md:border-r border-[#222] flex items-center justify-center overflow-hidden">
-                                                    {shot.videoUrl ? (
-                                                        <video src={shot.videoUrl} className="w-full h-full object-cover" controls loop muted autoPlay />
-                                                    ) : shot.imageUrl ? (
-                                                        <>
-                                                            <img src={shot.imageUrl} className="w-full h-full object-cover" />
-                                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-sm z-10">
-                                                                <button 
-                                                                    onClick={() => renderShotVideo(selectedSceneId!, selectedBeatId!, shot)}
-                                                                    className="flex flex-col items-center gap-2 transform hover:scale-105 transition-transform"
-                                                                >
-                                                                    <div className="p-3 bg-[var(--color-accent)] rounded-full text-black">
-                                                                        <VideoIcon className="w-5 h-5 fill-current" />
-                                                                    </div>
-                                                                    <span className="font-mono text-[9px] font-bold tracking-widest text-white">GENERATE MOTION</span>
-                                                                </button>
-                                                            </div>
-                                                        </>
-                                                    ) : (
-                                                        <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-[#0F0F0F] relative">
-                                                            {/* Grid pattern background */}
-                                                            <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
-                                                            
-                                                            {processingShotId === shot.id ? (
-                                                                <Loader text="RENDERING" />
-                                                            ) : (
-                                                                <button 
-                                                                    onClick={() => renderShotImage(selectedSceneId!, selectedBeatId!, shot)}
-                                                                    className="flex flex-col items-center gap-3 group/btn z-10"
-                                                                >
-                                                                    <ImageIcon className="w-8 h-8 text-gray-700 group-hover/btn:text-white transition-colors" />
-                                                                    <span className="text-[9px] font-mono text-gray-600 group-hover/btn:text-white tracking-widest border border-gray-800 px-3 py-1 rounded group-hover/btn:border-white transition-all">GENERATE FRAME</span>
-                                                                </button>
+                                                            {/* Status Indicator */}
+                                                            {selectedBeatId === beat.id && (
+                                                                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--color-accent)]" />
                                                             )}
                                                         </div>
-                                                    )}
-                                                    <div className="absolute top-2 left-2 bg-black/80 backdrop-blur px-2 py-0.5 text-[9px] font-mono border border-white/10 text-white/90 z-20">
-                                                        {shot.shotType.toUpperCase()}
-                                                    </div>
-                                                </div>
-
-                                                {/* Shot Details */}
-                                                <div className="flex-1 p-5 flex flex-col min-w-0">
-                                                    <div className="flex flex-wrap gap-2 mb-4">
-                                                        {shot.assetIds.map(aid => (
-                                                            <span key={aid} className="text-[9px] px-2 py-1 border border-[#333] rounded-sm text-gray-400 bg-[#111] flex items-center gap-1">
-                                                                <Users size={10} className="opacity-50" />
-                                                                {scriptData?.assets.find(a => a.id === aid)?.name || aid}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                    
-                                                    <div className="flex-1">
-                                                        <h5 className="text-base font-serif text-white mb-3 leading-relaxed">{shot.action}</h5>
-                                                        <div className="bg-[#111] p-3 rounded border border-[#222] relative">
-                                                            <div className="absolute -top-2 left-2 px-1 bg-[#111] text-[9px] text-gray-500 font-mono">VISUAL PROMPT</div>
-                                                            <p className="text-[11px] font-mono text-gray-400 leading-relaxed break-words">{shot.visualPrompt}</p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="mt-4 pt-3 border-t border-[#222] flex justify-between items-center">
-                                                        <span className="font-mono text-[9px] text-gray-600">ID: {shot.id}</span>
-                                                        <div className="flex gap-2">
-                                                            {/* Placeholder actions */}
-                                                            <Maximize2 size={12} className="text-gray-600 hover:text-white cursor-pointer" />
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        
-                                        {!selectedBeatId && (
-                                            <div className="h-full min-h-[50vh] flex flex-col items-center justify-center text-gray-800 font-mono text-xs gap-4 opacity-50">
-                                                <Layout size={48} strokeWidth={1} />
-                                                <p>SELECT A BEAT FROM THE SCRIPT TO VIEW SHOT LIST</p>
-                                            </div>
-                                        )}
-
-                                        {selectedBeatId && getActiveBeat()?.shots.length === 0 && state !== ProcessingState.GENERATING_SHOTS && (
-                                             <div className="min-h-[40vh] flex flex-col items-center justify-center text-gray-600 font-mono text-xs gap-6 p-12 text-center border-2 border-dashed border-[#222] rounded-lg bg-[#080808]">
-                                                <Film size={32} className="opacity-20" />
-                                                <div className="space-y-2">
-                                                    <p className="text-gray-400">NO SHOTS GENERATED</p>
-                                                    <p className="opacity-50 max-w-xs mx-auto">The AI needs to analyze this beat to break it down into cinematic shots.</p>
-                                                </div>
-                                                <button 
-                                                    onClick={() => handleBeatSelect(getActiveScene()!, getActiveBeat()!)}
-                                                    className="px-6 py-3 bg-[var(--color-accent)] text-black hover:bg-white transition-colors font-bold tracking-widest flex items-center gap-2"
-                                                >
-                                                    <Zap size={14} /> GENERATE SHOT LIST
-                                                </button>
-                                             </div>
-                                        )}
+                                                    ))}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
-                                </div>
+                                ))}
                             </div>
-                        </>
-                     )}
+                         </div>
+                    </section>
+
+                    {/* RIGHT PANEL: SHOTS VISUALIZATION */}
+                    <section className="flex-[1.2] bg-[var(--color-card)] flex flex-col overflow-hidden">
+                         <div className="p-4 border-b border-[var(--color-line)] flex items-center justify-between">
+                            <h2 className="text-xs font-bold font-mono tracking-widest flex items-center gap-2">
+                                <Camera size={14} /> SHOT_LIST: {getActiveScene()?.slugline.split(' - ')[0] || "SELECT SCENE"}
+                            </h2>
+                            {state === ProcessingState.GENERATING_SHOTS && <Loader text="DIRECTING" />}
+                         </div>
+
+                         <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+                             {!selectedBeatId && (
+                                 <div className="h-full flex flex-col items-center justify-center text-[var(--color-text-muted)] gap-4 opacity-50">
+                                     <Layout size={48} />
+                                     <p className="font-mono text-xs">SELECT A BEAT TO GENERATE SHOTS</p>
+                                 </div>
+                             )}
+
+                             {getActiveBeat()?.shots.map((shot, idx) => (
+                                 <motion.div 
+                                    key={shot.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.1 }}
+                                    className="border border-[var(--color-line)] bg-[var(--color-void)] p-4 group hover:border-[var(--color-text-muted)] transition-colors"
+                                 >
+                                     <div className="flex items-start gap-4 mb-4">
+                                         {/* Media Preview Area */}
+                                         <div className="w-1/3 aspect-video bg-[var(--color-panel)] border border-[var(--color-line)] relative overflow-hidden flex items-center justify-center group-hover:border-[var(--color-accent)] transition-colors">
+                                             {shot.videoUrl ? (
+                                                 <video src={shot.videoUrl} autoPlay loop muted className="w-full h-full object-cover" />
+                                             ) : shot.imageUrl ? (
+                                                 <img src={shot.imageUrl} alt="Shot" className="w-full h-full object-cover" />
+                                             ) : (
+                                                 <div className="text-[var(--color-text-muted)] flex flex-col items-center gap-2">
+                                                     {processingShotId === shot.id ? <Loader text="RENDERING" /> : <ImageIcon size={24} />}
+                                                 </div>
+                                             )}
+                                             
+                                             {/* Overlay Actions */}
+                                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                 <button 
+                                                    onClick={() => renderShotImage(selectedSceneId!, selectedBeatId!, shot)}
+                                                    className="p-2 bg-[var(--color-void)] border border-[var(--color-line)] hover:text-[var(--color-accent)]"
+                                                    title="Generate Image"
+                                                 >
+                                                     <ImageIcon size={14} />
+                                                 </button>
+                                                 {shot.imageUrl && (
+                                                     <button 
+                                                        onClick={() => renderShotVideo(selectedSceneId!, selectedBeatId!, shot)}
+                                                        className="p-2 bg-[var(--color-void)] border border-[var(--color-line)] hover:text-[var(--color-accent)]"
+                                                        title="Generate Video (Veo)"
+                                                     >
+                                                         <VideoIcon size={14} />
+                                                     </button>
+                                                 )}
+                                             </div>
+                                         </div>
+
+                                         {/* Shot Details */}
+                                         <div className="flex-1 space-y-2">
+                                             <div className="flex items-center gap-2">
+                                                 <span className="text-[9px] font-mono bg-[var(--color-line)] px-1.5 rounded text-[var(--color-text-main)]">
+                                                     {shot.shotType.toUpperCase()}
+                                                 </span>
+                                             </div>
+                                             <p className="font-serif text-sm leading-relaxed text-[var(--color-text-main)]">
+                                                 {shot.visualPrompt}
+                                             </p>
+                                             <div className="pt-2 flex flex-wrap gap-2">
+                                                 {shot.assetIds.map(aid => {
+                                                     const asset = scriptData?.assets.find(a => a.id === aid);
+                                                     if (!asset) return null;
+                                                     return (
+                                                         <span key={aid} className="text-[9px] font-mono border border-[var(--color-line)] px-2 py-0.5 rounded-full text-[var(--color-text-muted)]">
+                                                             {asset.name}
+                                                         </span>
+                                                     );
+                                                 })}
+                                             </div>
+                                         </div>
+                                     </div>
+                                 </motion.div>
+                             ))}
+                         </div>
+                    </section>
                 </motion.div>
             )}
 
         </AnimatePresence>
+
       </main>
 
+      {/* GLOBAL TERMINAL LOGS */}
       <Terminal logs={logs} />
     </div>
   );

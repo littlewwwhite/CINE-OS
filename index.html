@@ -10,16 +10,34 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
     <style>
       :root {
+        /* DARK MODE (DEFAULT) */
         --color-void: #050505;
-        --color-paper: #F0F0F0;
+        --color-card: #0A0A0A;
+        --color-panel: #080808;
+        --color-line: #333333;
+        --color-text-main: #F0F0F0;
+        --color-text-muted: #9CA3AF; /* gray-400 */
         --color-accent: #FF4500; /* International Orange */
       }
+      
+      .light-mode {
+        /* LIGHT MODE (LAB REPORT) */
+        --color-void: #F2F2F2;
+        --color-card: #FFFFFF;
+        --color-panel: #E5E5E5;
+        --color-line: #000000; /* Stark black borders */
+        --color-text-main: #000000;
+        --color-text-muted: #52525B; /* zinc-600 */
+        --color-accent: #FF4500; /* Keeps the brand identity */
+      }
+
       body {
         background-color: var(--color-void);
-        color: var(--color-paper);
+        color: var(--color-text-main);
         font-family: 'JetBrains Mono', monospace; /* Default to mono for that terminal feel */
         overflow-x: hidden;
         cursor: none; /* Hide default cursor */
+        transition: background-color 0.3s, color 0.3s;
       }
       a, button, input, [role="button"] {
         cursor: none; /* Ensure interactive elements also hide cursor */
@@ -35,10 +53,10 @@
         width: 6px;
       }
       ::-webkit-scrollbar-track {
-        background: #111;
+        background: var(--color-void);
       }
       ::-webkit-scrollbar-thumb {
-        background: #333;
+        background: var(--color-line);
       }
       ::-webkit-scrollbar-thumb:hover {
         background: var(--color-accent);

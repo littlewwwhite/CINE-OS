@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LogEntry } from '../types';
-import { ChevronUp, ChevronDown, Terminal as TerminalIcon, X } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TerminalProps {
@@ -35,29 +35,27 @@ const Terminal: React.FC<TerminalProps> = ({ logs }) => {
         {/* Header / StatusBar */}
         <button 
           onClick={() => setIsOpen(!isOpen)}
-          className={`w-full flex items-center justify-between px-4 py-2 border-t border-x border-[#333] bg-[#0A0A0A] text-xs font-mono transition-colors ${
-            isOpen ? 'bg-[#111]' : 'hover:bg-[#111]'
-          }`}
+          className={`w-full flex items-center justify-between px-4 py-2 border-t border-x border-[var(--color-line)] bg-[var(--color-card)] text-xs font-mono transition-colors hover:bg-[var(--color-panel)]`}
         >
           <div className="flex items-center gap-3 overflow-hidden">
             <div className="flex gap-1.5">
               <div className={`w-2 h-2 rounded-full ${latestLog?.type === 'error' ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></div>
             </div>
-            <span className="text-gray-400 shrink-0 font-bold">SYSTEM_LOG</span>
+            <span className="text-[var(--color-text-muted)] shrink-0 font-bold">SYSTEM_LOG</span>
             {!isOpen && latestLog && (
               <>
-                <span className="text-gray-600">::</span>
+                <span className="text-[var(--color-text-muted)]">::</span>
                 <span className={`truncate ${
-                  latestLog.type === 'error' ? 'text-red-400' :
-                  latestLog.type === 'success' ? 'text-green-400' : 
-                  latestLog.type === 'warning' ? 'text-yellow-400' : 'text-gray-400'
+                  latestLog.type === 'error' ? 'text-red-500' :
+                  latestLog.type === 'success' ? 'text-green-500' : 
+                  latestLog.type === 'warning' ? 'text-yellow-500' : 'text-[var(--color-text-muted)]'
                 }`}>
                   {latestLog.message}
                 </span>
               </>
             )}
           </div>
-          <div className="text-gray-500 hover:text-white">
+          <div className="text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]">
             {isOpen ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </div>
         </button>
@@ -69,17 +67,17 @@ const Terminal: React.FC<TerminalProps> = ({ logs }) => {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: 250, opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="bg-[#050505]/95 backdrop-blur border-x border-[#333] overflow-hidden flex flex-col"
+              className="bg-[var(--color-void)]/95 backdrop-blur border-x border-[var(--color-line)] overflow-hidden flex flex-col"
             >
-              <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] space-y-1 custom-scrollbar">
-                {logs.length === 0 && <span className="text-gray-600 italic">No system events recorded.</span>}
+              <div className="flex-1 overflow-y-auto p-4 font-mono text-[10px] space-y-1 custom-scrollbar text-[var(--color-text-main)]">
+                {logs.length === 0 && <span className="text-[var(--color-text-muted)] italic">No system events recorded.</span>}
                 {logs.map((log, i) => (
-                  <div key={i} className="flex gap-3 hover:bg-white/5 p-0.5 rounded">
-                    <span className="text-gray-600 shrink-0">[{log.timestamp}]</span>
+                  <div key={i} className="flex gap-3 hover:bg-[var(--color-text-main)]/5 p-0.5 rounded">
+                    <span className="text-[var(--color-text-muted)] shrink-0">[{log.timestamp}]</span>
                     <span className={`${
                       log.type === 'error' ? 'text-red-500 font-bold' : 
-                      log.type === 'success' ? 'text-green-400' : 
-                      log.type === 'warning' ? 'text-yellow-400' : 'text-gray-300'
+                      log.type === 'success' ? 'text-green-500' : 
+                      log.type === 'warning' ? 'text-yellow-500' : 'text-[var(--color-text-muted)]'
                     }`}>
                       {log.type === 'info' && '> '}
                       {log.message}

@@ -1,6 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 
-const AsciiBackground: React.FC = () => {
+interface AsciiBackgroundProps {
+  theme: 'DARK' | 'LIGHT';
+}
+
+const AsciiBackground: React.FC<AsciiBackgroundProps> = ({ theme }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -23,11 +27,24 @@ const AsciiBackground: React.FC = () => {
     }
 
     const draw = () => {
-      // Trail effect
-      ctx.fillStyle = 'rgba(5, 5, 5, 0.05)';
+      // Trail effect color depends on theme
+      // Dark: Almost black trail. Light: Almost white trail.
+      if (theme === 'DARK') {
+        ctx.fillStyle = 'rgba(5, 5, 5, 0.05)';
+        ctx.fillStyle = '#1a1a1a'; // Dark grey text
+      } else {
+        ctx.fillStyle = 'rgba(242, 242, 242, 0.05)'; // Matches --color-void #F2F2F2
+      }
+      
       ctx.fillRect(0, 0, width, height);
 
-      ctx.fillStyle = '#1a1a1a'; // Very subtle grey
+      // Text color
+      if (theme === 'DARK') {
+          ctx.fillStyle = '#1a1a1a'; // Subtle dark grey for background noise
+      } else {
+          ctx.fillStyle = '#D4D4D8'; // Light grey (zinc-300) for light mode noise
+      }
+      
       ctx.font = `${fontSize}px monospace`;
 
       for (let i = 0; i < drops.length; i++) {
@@ -54,7 +71,7 @@ const AsciiBackground: React.FC = () => {
       clearInterval(interval);
       window.removeEventListener('resize', handleResize);
     };
-  }, []);
+  }, [theme]);
 
   return (
     <canvas 
