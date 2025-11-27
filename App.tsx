@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play } from 'lucide-react';
+import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play, CheckCircle, Cpu, Globe, Layers, MessageSquare, HelpCircle, Terminal as TerminalIcon, Github, Twitter } from 'lucide-react';
 import AsciiBackground from './components/AsciiBackground';
 import Terminal from './components/Terminal';
 import Loader from './components/Loader';
@@ -24,6 +24,9 @@ const App: React.FC = () => {
   const novelInputRef = useRef<HTMLInputElement>(null);
   const scriptInputRef = useRef<HTMLInputElement>(null);
 
+  // FAQ State
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setLogs(prev => [...prev, { timestamp, message, type }]);
@@ -44,7 +47,6 @@ const App: React.FC = () => {
   const startAnalysis = async (text: string, mode: 'NOVEL' | 'SCRIPT') => {
     try {
       setState(ProcessingState.ANALYZING_SCRIPT);
-      // Immediately switch to workspace to show loading state there, or keep a loading overlay
       setView('WORKSPACE'); 
       addLog(`Initializing ${mode} Pipeline...`, 'info');
       addLog("Extracting Narrative Structure & Assets...", 'info');
@@ -76,7 +78,6 @@ const App: React.FC = () => {
     setSelectedSceneId(scene.id);
     setSelectedBeatId(beat.id);
 
-    // If shots already exist, just select
     if (beat.shots.length > 0) return;
 
     try {
@@ -184,6 +185,14 @@ const App: React.FC = () => {
   const getActiveScene = () => scriptData?.scenes.find(s => s.id === selectedSceneId);
   const getActiveBeat = () => getActiveScene()?.beats.find(b => b.id === selectedBeatId);
 
+  // LANDING PAGE SECTIONS
+  const FAQs = [
+      { q: "Can I import raw text?", a: "Yes. The 'Novel Mode' utilizes Gemini 2.5's reasoning capabilities to parse unstructured text into standard screenplay format, identifying sluglines and dialogue automatically." },
+      { q: "What is the resolution output?", a: "Images are generated at 2K resolution via Gemini 2.5 Flash Image. Video synthesis is handled by Veo 3.1 at 720p/1080p depending on the complexity of the motion vector." },
+      { q: "How is consistency maintained?", a: "We use a global asset registry. Once a character is defined, their visual embeddings (hair, clothes, style) are injected into every prompt to prevent 'character hallucination' between shots." },
+      { q: "Is this real-time?", a: "Text processing is near-instant. Image generation takes ~3s per shot. Video generation is heavy compute and takes ~10-20s per shot." }
+  ];
+
   return (
     <div className="relative min-h-screen text-[#F0F0F0] font-sans selection:bg-[#FF4500] selection:text-white bg-[#050505] overflow-hidden flex flex-col">
       <AsciiBackground />
@@ -194,7 +203,12 @@ const App: React.FC = () => {
             <Film className="w-5 h-5 text-[var(--color-accent)]" />
             <h1 className="text-lg font-bold tracking-tighter font-serif">CINE-OS <span className="text-[10px] font-mono font-normal opacity-50 ml-2">PROD_PIPELINE_V4</span></h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
+            <nav className="hidden md:flex gap-6 text-[10px] font-mono tracking-widest text-gray-400">
+                <button onClick={() => setView('LANDING')} className="hover:text-white">SYSTEM</button>
+                <button onClick={() => setView('IMPORT')} className="hover:text-white">IMPORT</button>
+                <a href="#" className="hover:text-white">DOCS</a>
+            </nav>
             {state !== ProcessingState.IDLE && state !== ProcessingState.COMPLETE && (
                 <div className="text-[10px] font-mono text-[var(--color-accent)] animate-pulse flex items-center gap-2">
                     <Zap size={12} /> PROCESSING_NODE_ACTIVE
@@ -208,53 +222,228 @@ const App: React.FC = () => {
         
         <AnimatePresence mode='wait'>
             
-            {/* VIEW 1: LANDING PAGE */}
+            {/* VIEW 1: LANDING PAGE (SCROLLABLE HOMEPAGE) */}
             {view === 'LANDING' && (
                 <motion.div 
                     key="landing"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, scale: 1.05 }}
-                    transition={{ duration: 0.8 }}
-                    className="flex-1 flex flex-col items-center justify-center p-8 relative"
+                    exit={{ opacity: 0 }}
+                    className="flex-1 overflow-y-auto scroll-smooth custom-scrollbar h-[calc(100vh-3.5rem)]"
                 >
-                    <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                        <div className="w-[80vw] h-[80vw] border border-white rounded-full animate-[spin_60s_linear_infinite]" />
-                        <div className="w-[60vw] h-[60vw] border border-white rounded-full absolute animate-[spin_40s_linear_infinite_reverse]" />
-                    </div>
-
-                    <motion.div 
-                        initial={{ y: 50, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.2, duration: 0.8 }}
-                        className="text-center space-y-8 z-10"
-                    >
-                        <h1 className="text-8xl md:text-9xl font-serif tracking-tighter leading-none text-white mix-blend-difference">
-                            CODE<br/><span className="text-[var(--color-accent)]">TO</span><br/>CINEMA
-                        </h1>
-                        <p className="font-mono text-sm tracking-[0.3em] text-gray-400">
-                            A.I. POWERED FILMMAKING PIPELINE
-                        </p>
-                        
-                        <div className="pt-8">
-                            <button 
-                                onClick={() => setView('IMPORT')}
-                                className="group relative px-8 py-4 bg-transparent border border-[#333] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-all duration-300"
-                            >
-                                <span className="flex items-center gap-3 font-mono text-xs tracking-widest group-hover:text-white transition-colors">
-                                    INITIALIZE SYSTEM <ArrowRight className="w-4 h-4" />
-                                </span>
-                                <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-[var(--color-accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="absolute -top-1 -left-1 w-2 h-2 bg-[var(--color-accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </button>
+                    {/* SECTION 1: HERO */}
+                    <section className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-8 relative border-b border-[#222]">
+                        <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                            <div className="w-[80vw] h-[80vw] border border-white rounded-full animate-[spin_60s_linear_infinite]" />
+                            <div className="w-[60vw] h-[60vw] border border-white rounded-full absolute animate-[spin_40s_linear_infinite_reverse]" />
                         </div>
-                    </motion.div>
 
-                    <div className="absolute bottom-12 w-full max-w-4xl flex justify-between text-[10px] font-mono text-gray-600 uppercase tracking-widest">
-                        <span>Gemini 2.5 Flash [ONLINE]</span>
-                        <span>Veo 3.1 Preview [ONLINE]</span>
-                        <span>Latency: 12ms</span>
-                    </div>
+                        <motion.div 
+                            initial={{ y: 50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            transition={{ duration: 0.8 }}
+                            className="text-center space-y-8 z-10 max-w-5xl"
+                        >
+                            <h1 className="text-7xl md:text-9xl font-serif tracking-tighter leading-[0.8] text-white mix-blend-difference">
+                                CODE<br/><span className="text-[var(--color-accent)]">TO</span><br/>CINEMA
+                            </h1>
+                            <p className="font-mono text-sm md:text-base tracking-[0.3em] text-gray-400 max-w-2xl mx-auto">
+                                THE WORLD'S FIRST GENERATIVE FILMMAKING COMPILER.
+                                TRANSFORM MANUSCRIPTS INTO MOVING PICTURES.
+                            </p>
+                            
+                            <div className="pt-8">
+                                <button 
+                                    onClick={() => setView('IMPORT')}
+                                    className="group relative px-12 py-6 bg-transparent border border-[#333] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-all duration-300"
+                                >
+                                    <span className="flex items-center gap-3 font-mono text-xs tracking-widest group-hover:text-white transition-colors">
+                                        INITIALIZE SYSTEM <ArrowRight className="w-4 h-4" />
+                                    </span>
+                                    <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-[var(--color-accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="absolute -top-1 -left-1 w-2 h-2 bg-[var(--color-accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </button>
+                            </div>
+                        </motion.div>
+                    </section>
+
+                    {/* SECTION 2: SOCIAL PROOF / NETWORK */}
+                    <section className="border-b border-[#222] bg-[#0A0A0A] py-8 overflow-hidden whitespace-nowrap">
+                        <div className="flex items-center gap-16 animate-marquee text-gray-600 font-mono text-xs tracking-widest opacity-50">
+                            {[1,2,3,4].map(i => (
+                                <React.Fragment key={i}>
+                                    <span className="flex items-center gap-2"><Cpu size={14}/> POWERED BY GEMINI 2.5</span>
+                                    <span className="flex items-center gap-2"><VideoIcon size={14}/> VIDEO BY VEO 3.1</span>
+                                    <span className="flex items-center gap-2"><Globe size={14}/> GOOGLE CLOUD VERTEX</span>
+                                    <span className="flex items-center gap-2"><Layers size={14}/> REACT 19 KERNEL</span>
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* SECTION 3: PROBLEM STATEMENT */}
+                    <section className="py-24 px-8 border-b border-[#222] bg-white text-black">
+                        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16">
+                            <div>
+                                <h3 className="font-mono text-xs tracking-widest mb-6 text-gray-500">THE BOTTLENECK</h3>
+                                <h2 className="text-5xl font-serif leading-tight mb-6">
+                                    Text is static.<br/>Imagination is fluid.
+                                </h2>
+                                <p className="font-mono text-sm leading-relaxed text-gray-600">
+                                    Traditional pre-visualization requires weeks of storyboarding, expensive concept artists, and ambiguous communication. The gap between the writer's mind and the director's screen is where the budget dies.
+                                </p>
+                            </div>
+                            <div className="flex flex-col justify-center space-y-4 font-mono text-xs">
+                                <div className="p-4 border border-black flex items-center justify-between opacity-50">
+                                    <span>SCRIPT.PDF</span>
+                                    <span className="text-red-500">READING...</span>
+                                </div>
+                                <div className="p-4 border border-black flex items-center justify-between opacity-75">
+                                    <span>STORYBOARD.JPG</span>
+                                    <span className="text-orange-500">PENDING...</span>
+                                </div>
+                                <div className="p-4 bg-black text-white flex items-center justify-between scale-105 shadow-xl">
+                                    <span>CINE-OS_RENDER.MP4</span>
+                                    <span className="text-[var(--color-accent)] animate-pulse">GENERATING...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* SECTION 4: ARCHITECTURE (FEATURES) */}
+                    <section className="py-24 px-8 border-b border-[#222] bg-[#050505]">
+                        <div className="max-w-6xl mx-auto">
+                            <h3 className="font-mono text-xs tracking-widest mb-12 text-gray-500">SYSTEM ARCHITECTURE</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#222] border border-[#222]">
+                                {[
+                                    { title: "Semantic Parser", icon: <FileText/>, desc: "Deconstructs raw narrative into atomic beats and structured scenes using Gemini 2.5 Pro." },
+                                    { title: "Consistency Engine", icon: <Users/>, desc: "Maintains a persistent vector database of character assets to ensure visual continuity." },
+                                    { title: "Physics Renderer", icon: <Film/>, desc: "Veo 3.1 simulates camera lenses, lighting physics, and motion vectors for photorealism." },
+                                ].map((feature, idx) => (
+                                    <div key={idx} className="bg-[#0A0A0A] p-8 hover:bg-[#111] transition-colors group">
+                                        <div className="mb-6 text-[var(--color-accent)] group-hover:scale-110 transition-transform origin-left">
+                                            {feature.icon}
+                                        </div>
+                                        <h4 className="text-xl font-serif text-white mb-4">{feature.title}</h4>
+                                        <p className="font-mono text-xs text-gray-500 leading-relaxed">{feature.desc}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* SECTION 5: HOW IT WORKS */}
+                    <section className="py-24 px-8 border-b border-[#222] relative overflow-hidden">
+                        <div className="max-w-6xl mx-auto relative z-10">
+                            <h3 className="font-mono text-xs tracking-widest mb-16 text-center text-gray-500">THE PIPELINE</h3>
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-8 md:gap-0">
+                                <div className="text-center">
+                                    <div className="w-20 h-20 border border-[#333] rounded-full flex items-center justify-center mx-auto mb-6 bg-[#0A0A0A] text-gray-400">1</div>
+                                    <h4 className="font-serif text-lg mb-2">Input</h4>
+                                    <p className="font-mono text-xs text-gray-600">Drag & Drop Novel</p>
+                                </div>
+                                <div className="h-px w-24 bg-gradient-to-r from-[#333] via-[var(--color-accent)] to-[#333] hidden md:block"></div>
+                                <div className="text-center">
+                                    <div className="w-20 h-20 border border-[var(--color-accent)] rounded-full flex items-center justify-center mx-auto mb-6 bg-[#0A0A0A] text-white shadow-[0_0_20px_rgba(255,69,0,0.3)]">2</div>
+                                    <h4 className="font-serif text-lg mb-2">Compile</h4>
+                                    <p className="font-mono text-xs text-gray-600">AI Structure Analysis</p>
+                                </div>
+                                <div className="h-px w-24 bg-gradient-to-r from-[#333] via-[var(--color-accent)] to-[#333] hidden md:block"></div>
+                                <div className="text-center">
+                                    <div className="w-20 h-20 border border-[#333] rounded-full flex items-center justify-center mx-auto mb-6 bg-[#0A0A0A] text-gray-400">3</div>
+                                    <h4 className="font-serif text-lg mb-2">Render</h4>
+                                    <p className="font-mono text-xs text-gray-600">4K Video Output</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* SECTION 6: LOGS (TESTIMONIALS) */}
+                    <section className="py-24 px-8 border-b border-[#222] bg-[#080808]">
+                        <div className="max-w-4xl mx-auto">
+                            <h3 className="font-mono text-xs tracking-widest mb-12 text-gray-500">TRANSMISSION LOGS</h3>
+                            <div className="space-y-4">
+                                {[
+                                    { user: "DIR_ANDERSON", role: "Showrunner", msg: "Latency reduced by 400%. The visualization allows me to spot plot holes before a single frame is shot." },
+                                    { user: "WRITER_X", role: "Screenwriter", msg: "Seeing my words turn into consistent visuals instantly is terrifyingly beautiful. It changes how I write." }
+                                ].map((log, i) => (
+                                    <div key={i} className="border-l-2 border-[#333] pl-6 py-2 hover:border-[var(--color-accent)] transition-colors cursor-default">
+                                        <div className="flex items-center gap-3 mb-2 font-mono text-xs">
+                                            <span className="text-[var(--color-accent)]">@{log.user}</span>
+                                            <span className="bg-[#222] px-1.5 rounded text-[10px] text-gray-400">{log.role}</span>
+                                        </div>
+                                        <p className="text-gray-300 font-serif italic text-lg">"{log.msg}"</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* SECTION 7: FAQ */}
+                    <section className="py-24 px-8 border-b border-[#222]">
+                        <div className="max-w-3xl mx-auto">
+                            <h3 className="font-mono text-xs tracking-widest mb-12 text-gray-500">KNOWLEDGE BASE</h3>
+                            <div className="space-y-2">
+                                {FAQs.map((faq, idx) => (
+                                    <div key={idx} className="border border-[#222] bg-[#0A0A0A]">
+                                        <button 
+                                            onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                                            className="w-full flex items-center justify-between p-6 text-left hover:bg-[#111] transition-colors"
+                                        >
+                                            <span className="font-mono text-sm text-gray-300 flex gap-4">
+                                                <span className="text-[var(--color-accent)]">0{idx+1}.</span>
+                                                {faq.q}
+                                            </span>
+                                            {openFaq === idx ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
+                                        </button>
+                                        <AnimatePresence>
+                                            {openFaq === idx && (
+                                                <motion.div 
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="overflow-hidden"
+                                                >
+                                                    <div className="p-6 pt-0 pl-14 text-sm font-serif text-gray-500 leading-relaxed border-t border-[#222] border-dashed">
+                                                        {faq.a}
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* SECTION 8: FINAL CTA */}
+                    <section className="py-32 px-8 flex flex-col items-center justify-center text-center bg-[#050505]">
+                        <h2 className="text-6xl font-serif mb-8 text-white">Ready to Direct?</h2>
+                        <button 
+                            onClick={() => setView('IMPORT')}
+                            className="bg-[var(--color-accent)] text-black px-10 py-4 font-mono font-bold tracking-widest hover:bg-white transition-colors"
+                        >
+                            LAUNCH CONSOLE
+                        </button>
+                    </section>
+
+                    {/* FOOTER */}
+                    <footer className="py-12 px-8 border-t border-[#222] bg-[#020202] text-[10px] font-mono text-gray-600">
+                        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+                            <div className="flex items-center gap-2">
+                                <Film size={14} /> <span>CINE-OS SYSTEMS INC. © 2025</span>
+                            </div>
+                            <div className="flex gap-8">
+                                <a href="#" className="hover:text-white transition-colors">PRIVACY_PROTOCOL</a>
+                                <a href="#" className="hover:text-white transition-colors">TERMS_OF_SERVICE</a>
+                                <a href="#" className="hover:text-white transition-colors">API_STATUS</a>
+                            </div>
+                            <div className="flex gap-4">
+                                <Github size={14} className="hover:text-white cursor-pointer"/>
+                                <Twitter size={14} className="hover:text-white cursor-pointer"/>
+                            </div>
+                        </div>
+                    </footer>
                 </motion.div>
             )}
 
@@ -518,9 +707,14 @@ const App: React.FC = () => {
                                     )}
 
                                     {selectedBeatId && getActiveBeat()?.shots.length === 0 && state !== ProcessingState.GENERATING_SHOTS && (
-                                         <div className="h-full flex flex-col items-center justify-center text-gray-600 font-mono text-xs gap-4 p-12 border border-dashed border-[#222]">
-                                            <Zap className="w-8 h-8 opacity-20" />
+                                         <div className="h-full flex flex-col items-center justify-center text-gray-600 font-mono text-xs gap-4 p-12 text-center border-2 border-dashed border-[#222] rounded-lg">
                                             <p>NO SHOTS GENERATED YET</p>
+                                            <button 
+                                                onClick={() => handleBeatSelect(getActiveScene()!, getActiveBeat()!)}
+                                                className="px-4 py-2 bg-[var(--color-accent)] text-black hover:bg-white transition-colors"
+                                            >
+                                                GENERATE SHOT LIST
+                                            </button>
                                          </div>
                                     )}
                                 </div>
@@ -531,11 +725,9 @@ const App: React.FC = () => {
             )}
 
         </AnimatePresence>
-
-        {/* Console / Terminal Overlay */}
-        <Terminal logs={logs} />
-
       </main>
+
+      <Terminal logs={logs} />
     </div>
   );
 };
