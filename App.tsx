@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, Variants } from 'framer-motion';
 import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play, CheckCircle, Cpu, Globe, Layers, MessageSquare, HelpCircle, Terminal as TerminalIcon, Github, Twitter, ChevronLeft, Layout, Maximize2, Shield, Lock, Mail, Fingerprint, LogOut, HardDrive, Clock, Activity, Plus, MoreVertical, Folder, Sun, Moon } from 'lucide-react';
@@ -6,6 +7,7 @@ import Terminal from './components/Terminal';
 import Loader from './components/Loader';
 import Cursor from './components/Cursor';
 import DecryptedText from './components/DecryptedText';
+import PixelBackground from './components/PixelBackground';
 import { analyzeNovel, generateShotsForBeat, generateShotImage, generateShotVideo } from './services/gemini';
 import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot, Project, Asset } from './types';
 
@@ -87,8 +89,7 @@ const App: React.FC = () => {
 
   // Parallax Scroll Hooks
   const { scrollY } = useScroll();
-  const y1 = useTransform(scrollY, [0, 1000], [0, 200]);
-  const y2 = useTransform(scrollY, [0, 1000], [0, -150]);
+  // Removed circular parallax transforms
   const opacityText = useTransform(scrollY, [0, 300], [1, 0]);
 
   // Apply Theme
@@ -464,13 +465,8 @@ const App: React.FC = () => {
                         whileInView="visible"
                         viewport={{ once: true }}
                     >
-                        {/* Parallax Background Elements */}
-                        <motion.div style={{ y: y1 }} className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                            <div className="w-[80vw] h-[80vw] border border-[var(--color-text-muted)] rounded-full animate-[spin_60s_linear_infinite]" />
-                        </motion.div>
-                        <motion.div style={{ y: y2 }} className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                            <div className="w-[60vw] h-[60vw] border border-[var(--color-text-muted)] rounded-full absolute animate-[spin_40s_linear_infinite_reverse]" />
-                        </motion.div>
+                        {/* Pixel Background - Replaces Rings */}
+                        <PixelBackground theme={theme} />
 
                         {/* Spotlight Gradient - Adapted for theme */}
                         <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] pointer-events-none ${theme === 'DARK' ? 'bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0)_60%)]' : 'bg-[radial-gradient(circle,rgba(0,0,0,0.03)_0%,rgba(255,255,255,0)_60%)]'}`} />
