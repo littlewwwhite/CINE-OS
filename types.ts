@@ -54,3 +54,13 @@ export interface LogEntry {
   message: string;
   type: 'info' | 'success' | 'warning' | 'error';
 }
+
+export interface Project {
+  id: string;
+  title: string;
+  lastModified: string;
+  sceneCount: number;
+  thumbnailUrl?: string;
+  progress: number; // 0-100
+  status: 'DRAFT' | 'RENDERING' | 'COMPLETED';
+}

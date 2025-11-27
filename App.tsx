@@ -1,15 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play, CheckCircle, Cpu, Globe, Layers, MessageSquare, HelpCircle, Terminal as TerminalIcon, Github, Twitter, ChevronLeft, Layout, Maximize2, Shield, Lock, Mail, Fingerprint, LogOut } from 'lucide-react';
+import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play, CheckCircle, Cpu, Globe, Layers, MessageSquare, HelpCircle, Terminal as TerminalIcon, Github, Twitter, ChevronLeft, Layout, Maximize2, Shield, Lock, Mail, Fingerprint, LogOut, HardDrive, Clock, Activity, Plus, MoreVertical, Folder } from 'lucide-react';
 import AsciiBackground from './components/AsciiBackground';
 import Terminal from './components/Terminal';
 import Loader from './components/Loader';
 import Cursor from './components/Cursor';
 import DecryptedText from './components/DecryptedText';
 import { analyzeNovel, generateShotsForBeat, generateShotImage, generateShotVideo } from './services/gemini';
-import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot } from './types';
+import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot, Project } from './types';
 
-type ViewState = 'LANDING' | 'AUTH' | 'IMPORT' | 'WORKSPACE';
+type ViewState = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'IMPORT' | 'WORKSPACE';
 
 interface User {
   id: string;
@@ -33,12 +33,40 @@ const staggerContainer = {
   }
 };
 
+const MOCK_PROJECTS: Project[] = [
+    {
+        id: 'PROJ-001',
+        title: 'The Last Neuro-Link',
+        lastModified: '2 HOURS AGO',
+        sceneCount: 12,
+        progress: 65,
+        status: 'RENDERING'
+    },
+    {
+        id: 'PROJ-002',
+        title: 'Echoes of Silicon',
+        lastModified: '1 DAY AGO',
+        sceneCount: 8,
+        progress: 30,
+        status: 'DRAFT'
+    },
+    {
+        id: 'PROJ-003',
+        title: 'Void Walker',
+        lastModified: '3 DAYS AGO',
+        sceneCount: 24,
+        progress: 100,
+        status: 'COMPLETED'
+    }
+];
+
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('LANDING');
   const [state, setState] = useState<ProcessingState>(ProcessingState.IDLE);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [scriptData, setScriptData] = useState<ScriptData | null>(null);
   const [user, setUser] = useState<User | null>(null);
+  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS);
   
   // Workspace UI State
   const [isAssetsPanelOpen, setIsAssetsPanelOpen] = useState(true);
@@ -85,13 +113,28 @@ const App: React.FC = () => {
       });
       
       addLog('IDENTITY VERIFIED. ENCRYPTION KEYS EXCHANGED.', 'success');
-      setTimeout(() => setView('IMPORT'), 500);
+      // Redirect to Dashboard after login
+      setTimeout(() => setView('DASHBOARD'), 500);
   };
 
   const handleLogout = () => {
       setUser(null);
       setView('LANDING');
       addLog('SESSION TERMINATED.', 'info');
+  };
+
+  const loadProject = (project: Project) => {
+      addLog(`LOADING PROJECT MODULE: ${project.id}`, 'info');
+      // In a real app, fetch data here. For mock, we just switch view.
+      // Mocking some script data for the "loaded" project
+      setScriptData({
+          title: project.title,
+          genre: 'Sci-Fi',
+          logline: 'Loaded from dashboard.',
+          assets: [],
+          scenes: []
+      });
+      setTimeout(() => setView('WORKSPACE'), 500);
   };
 
   // Handle File Upload and Auto-Start
@@ -262,7 +305,10 @@ const App: React.FC = () => {
 
       {/* Header */}
       <header className="fixed top-0 left-0 w-full h-14 border-b border-[#333] bg-[#050505]/90 backdrop-blur-md flex items-center justify-between px-6 z-50">
-        <div className="flex items-center gap-4 cursor-pointer group" onClick={() => setView('LANDING')}>
+        <div 
+            className="flex items-center gap-4 cursor-pointer group" 
+            onClick={() => user ? setView('DASHBOARD') : setView('LANDING')}
+        >
             <Film className="w-5 h-5 text-[var(--color-accent)] group-hover:animate-spin-slow" />
             <h1 className="text-lg font-bold tracking-tighter font-serif">CINE-OS <span className="text-[10px] font-mono font-normal opacity-50 ml-2">PROD_PIPELINE_V4</span></h1>
         </div>
@@ -654,7 +700,115 @@ const App: React.FC = () => {
                 </motion.div>
             )}
 
-            {/* VIEW 3: IMPORT SELECTION */}
+            {/* VIEW 3: DASHBOARD (NEW) */}
+            {view === 'DASHBOARD' && (
+                <motion.div
+                    key="dashboard"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col p-8 max-w-7xl mx-auto w-full h-[calc(100vh-3.5rem)] overflow-y-auto custom-scrollbar"
+                >
+                    {/* Stats Module */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12 pb-8 border-b border-[#333]">
+                         {[
+                             { label: "STORAGE_USED", value: "45%", icon: <HardDrive size={14} className="text-[var(--color-accent)]"/> },
+                             { label: "TOTAL_RENDERS", value: "1,024", icon: <Film size={14} className="text-blue-400"/> },
+                             { label: "GPU_TIME", value: "14h 22m", icon: <Clock size={14} className="text-purple-400"/> },
+                             { label: "SYSTEM_STATUS", value: "ONLINE", icon: <Activity size={14} className="text-green-400"/> },
+                         ].map((stat, i) => (
+                             <div key={i} className="bg-[#0A0A0A] border border-[#222] p-4 flex flex-col justify-between h-24 hover:border-gray-700 transition-colors">
+                                 <div className="flex justify-between items-start">
+                                     <span className="text-[10px] font-mono text-gray-500 tracking-widest">{stat.label}</span>
+                                     {stat.icon}
+                                 </div>
+                                 <span className="text-2xl font-mono text-white">{stat.value}</span>
+                             </div>
+                         ))}
+                    </div>
+
+                    <div className="flex justify-between items-end mb-8">
+                        <div>
+                             <h2 className="text-4xl font-serif text-white mb-2">Mission Control</h2>
+                             <p className="text-xs font-mono text-gray-500">SELECT DATA CARTRIDGE TO RESUME</p>
+                        </div>
+                        <button 
+                            onClick={() => setView('IMPORT')}
+                            className="bg-white text-black px-6 py-3 font-mono text-xs font-bold hover:bg-[var(--color-accent)] hover:text-white transition-colors flex items-center gap-2"
+                        >
+                            <Plus size={16} /> NEW PROJECT
+                        </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* New Project Card (Alternative Entry) */}
+                        <div 
+                            onClick={() => setView('IMPORT')}
+                            className="border-2 border-dashed border-[#222] bg-transparent flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/5 transition-all group h-64"
+                        >
+                             <div className="w-12 h-12 rounded-full border border-[#333] flex items-center justify-center group-hover:scale-110 transition-transform bg-[#0A0A0A]">
+                                <Plus size={24} className="text-gray-500 group-hover:text-[var(--color-accent)]" />
+                             </div>
+                             <span className="text-xs font-mono text-gray-500 group-hover:text-white tracking-widest">INITIATE SEQUENCE</span>
+                        </div>
+
+                        {/* Project Cards */}
+                        {projects.map((project) => (
+                            <div 
+                                key={project.id}
+                                onClick={() => loadProject(project)}
+                                className="bg-[#0A0A0A] border border-[#222] p-0 cursor-pointer group hover:border-[var(--color-accent)] transition-all h-64 flex flex-col relative overflow-hidden"
+                            >
+                                <div className="absolute top-3 right-3 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <MoreVertical size={16} className="text-white hover:text-[var(--color-accent)]" />
+                                </div>
+
+                                {/* Thumbnail Mock */}
+                                <div className="h-32 bg-[#111] relative overflow-hidden border-b border-[#222]">
+                                     <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop')] bg-cover opacity-30 grayscale group-hover:grayscale-0 transition-all duration-500 scale-100 group-hover:scale-110" />
+                                     <div className="absolute bottom-2 left-2 bg-black/80 px-2 py-0.5 text-[9px] font-mono text-white border border-white/10">
+                                         {project.sceneCount} SCENES
+                                     </div>
+                                </div>
+
+                                <div className="p-5 flex-1 flex flex-col justify-between">
+                                    <div>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="text-[9px] font-mono text-[var(--color-accent)]">{project.id}</span>
+                                            <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded ${
+                                                project.status === 'COMPLETED' ? 'bg-green-500/10 text-green-500' :
+                                                project.status === 'RENDERING' ? 'bg-yellow-500/10 text-yellow-500 animate-pulse' :
+                                                'bg-gray-800 text-gray-500'
+                                            }`}>
+                                                {project.status}
+                                            </span>
+                                        </div>
+                                        <h3 className="text-lg font-serif text-white group-hover:text-[var(--color-accent)] transition-colors truncate">{project.title}</h3>
+                                    </div>
+
+                                    <div>
+                                        <div className="flex justify-between text-[9px] font-mono text-gray-500 mb-1">
+                                            <span>PROGRESS</span>
+                                            <span>{project.progress}%</span>
+                                        </div>
+                                        <div className="h-1 w-full bg-[#222] rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-white group-hover:bg-[var(--color-accent)] transition-colors duration-500" 
+                                                style={{ width: `${project.progress}%` }} 
+                                            />
+                                        </div>
+                                        <p className="mt-3 text-[9px] font-mono text-gray-600 flex items-center gap-1">
+                                            <Clock size={10} /> EDITED {project.lastModified}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+            )}
+
+            {/* VIEW 4: IMPORT SELECTION */}
             {view === 'IMPORT' && (
                 <motion.div 
                     key="import"
@@ -726,7 +880,7 @@ const App: React.FC = () => {
                 </motion.div>
             )}
 
-            {/* VIEW 4: WORKSPACE (OPTIMIZED LAYOUT) */}
+            {/* VIEW 5: WORKSPACE (OPTIMIZED LAYOUT) */}
             {view === 'WORKSPACE' && (
                 <motion.div 
                     key="workspace"
