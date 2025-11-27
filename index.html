@@ -19,6 +19,10 @@
         color: var(--color-paper);
         font-family: 'JetBrains Mono', monospace; /* Default to mono for that terminal feel */
         overflow-x: hidden;
+        cursor: none; /* Hide default cursor */
+      }
+      a, button, input, [role="button"] {
+        cursor: none; /* Ensure interactive elements also hide cursor */
       }
       .font-serif {
         font-family: 'Playfair Display', serif;
