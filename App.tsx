@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play, CheckCircle, Cpu, Globe, Layers, MessageSquare, HelpCircle, Terminal as TerminalIcon, Github, Twitter, ChevronLeft, Layout, Maximize2 } from 'lucide-react';
 import AsciiBackground from './components/AsciiBackground';
 import Terminal from './components/Terminal';
 import Loader from './components/Loader';
 import Cursor from './components/Cursor';
+import DecryptedText from './components/DecryptedText';
 import { analyzeNovel, generateShotsForBeat, generateShotImage, generateShotVideo } from './services/gemini';
 import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot } from './types';
 
@@ -23,19 +24,6 @@ const staggerContainer = {
       staggerChildren: 0.1
     }
   }
-};
-
-const letterContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.2 }
-  }
-};
-
-const letterAnimation = {
-  hidden: { opacity: 0, y: 50 },
-  visible: { opacity: 1, y: 0, transition: { type: "spring", damping: 12, stiffness: 100 } }
 };
 
 const App: React.FC = () => {
@@ -58,6 +46,12 @@ const App: React.FC = () => {
 
   // FAQ State
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  // Parallax Scroll Hooks
+  const { scrollY } = useScroll();
+  const y1 = useTransform(scrollY, [0, 1000], [0, 200]);
+  const y2 = useTransform(scrollY, [0, 1000], [0, -150]);
+  const opacityText = useTransform(scrollY, [0, 300], [1, 0]);
 
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -225,16 +219,6 @@ const App: React.FC = () => {
       { q: "Is this real-time?", a: "Text processing is near-instant. Image generation takes ~3s per shot. Video generation is heavy compute and takes ~10-20s per shot." }
   ];
 
-  const TitleText = ({ text, className }: { text: string, className?: string }) => (
-    <motion.span variants={letterContainer} initial="hidden" animate="visible" className={`inline-block ${className}`}>
-        {text.split('').map((char, i) => (
-            <motion.span key={i} variants={letterAnimation} className="inline-block">
-                {char === ' ' ? '\u00A0' : char}
-            </motion.span>
-        ))}
-    </motion.span>
-  );
-
   return (
     <div className="relative min-h-screen text-[#F0F0F0] font-sans selection:bg-[#FF4500] selection:text-white bg-[#050505] overflow-hidden flex flex-col cursor-none">
       <Cursor />
@@ -276,29 +260,39 @@ const App: React.FC = () => {
                 >
                     {/* SECTION 1: HERO */}
                     <motion.section 
-                        className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-8 relative border-b border-[#222]"
+                        className="min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center p-8 relative border-b border-[#222] overflow-hidden"
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
                     >
-                        <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                        {/* Parallax Background Elements */}
+                        <motion.div style={{ y: y1 }} className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
                             <div className="w-[80vw] h-[80vw] border border-white rounded-full animate-[spin_60s_linear_infinite]" />
+                        </motion.div>
+                        <motion.div style={{ y: y2 }} className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
                             <div className="w-[60vw] h-[60vw] border border-white rounded-full absolute animate-[spin_40s_linear_infinite_reverse]" />
-                        </div>
+                        </motion.div>
 
-                        <div className="text-center space-y-8 z-10 max-w-5xl">
-                            <div className="text-7xl md:text-9xl font-serif tracking-tighter leading-[0.8] text-white mix-blend-difference hover:tracking-wide transition-all duration-700">
-                                <TitleText text="CODE" className="block" />
-                                <TitleText text="TO" className="block text-[var(--color-accent)]" />
-                                <TitleText text="CINEMA" className="block" />
+                        {/* Spotlight Gradient */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,rgba(0,0,0,0)_60%)] pointer-events-none" />
+
+                        <motion.div style={{ opacity: opacityText }} className="text-center space-y-12 z-10 max-w-7xl">
+                            <div className="flex flex-col items-center justify-center select-none">
+                                <div className="flex flex-col items-center text-8xl md:text-[11rem] font-serif tracking-tighter leading-[0.85] text-white mix-blend-difference hover:tracking-wide transition-all duration-700 uppercase">
+                                    <DecryptedText text="CODE" speed={100} delay={200} />
+                                    <span className="text-[var(--color-accent)]">
+                                        <DecryptedText text="TO" speed={100} delay={800} />
+                                    </span>
+                                    <DecryptedText text="CINEMA" speed={80} delay={1400} />
+                                </div>
                             </div>
                             
                             <motion.p 
                                 variants={fadeInUp}
-                                className="font-mono text-sm md:text-base tracking-[0.3em] text-gray-400 max-w-2xl mx-auto"
+                                className="font-mono text-sm md:text-base tracking-[0.3em] text-gray-400 max-w-2xl mx-auto uppercase"
                             >
-                                THE WORLD'S FIRST GENERATIVE FILMMAKING COMPILER.
-                                TRANSFORM MANUSCRIPTS INTO MOVING PICTURES.
+                                The world's first generative filmmaking compiler.<br/>
+                                Transform manuscripts into moving pictures.
                             </motion.p>
                             
                             <motion.div className="pt-8" variants={fadeInUp}>
@@ -314,11 +308,11 @@ const App: React.FC = () => {
                                     <div className="absolute -top-1 -left-1 w-2 h-2 bg-[var(--color-accent)] opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </button>
                             </motion.div>
-                        </div>
+                        </motion.div>
                     </motion.section>
 
                     {/* SECTION 2: SOCIAL PROOF / NETWORK */}
-                    <section className="border-b border-[#222] bg-[#0A0A0A] py-8 overflow-hidden whitespace-nowrap">
+                    <section className="border-b border-[#222] bg-[#0A0A0A] py-8 overflow-hidden whitespace-nowrap z-20 relative">
                         <div className="flex items-center gap-16 animate-marquee text-gray-600 font-mono text-xs tracking-widest opacity-50">
                             {[1,2,3,4].map(i => (
                                 <React.Fragment key={i}>
@@ -331,96 +325,125 @@ const App: React.FC = () => {
                         </div>
                     </section>
 
-                    {/* SECTION 3: PROBLEM STATEMENT */}
+                    {/* SECTION 3: PROBLEM STATEMENT (STICKY HEADER LAYOUT) */}
                     <motion.section 
-                        className="py-24 px-8 border-b border-[#222] bg-white text-black"
+                        className="py-32 px-8 border-b border-[#222] bg-white text-black min-h-screen flex items-center"
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, amount: 0.3 }}
-                        variants={staggerContainer}
+                        viewport={{ once: true, amount: 0.1 }}
                     >
-                        <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16">
-                            <motion.div variants={fadeInUp}>
-                                <h3 className="font-mono text-xs tracking-widest mb-6 text-gray-500">THE BOTTLENECK</h3>
-                                <h2 className="text-5xl font-serif leading-tight mb-6">
-                                    Text is static.<br/>Imagination is fluid.
-                                </h2>
-                                <p className="font-mono text-sm leading-relaxed text-gray-600">
+                        <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-16">
+                            <div className="md:col-span-4 relative">
+                                <div className="md:sticky md:top-32">
+                                    <h3 className="font-mono text-xs tracking-widest mb-6 text-gray-500 border-b border-gray-200 pb-4">01 // THE BOTTLENECK</h3>
+                                    <h2 className="text-6xl font-serif leading-none mb-6">
+                                        Text is static.<br/>Imagination is fluid.
+                                    </h2>
+                                </div>
+                            </div>
+                            
+                            <div className="md:col-span-8 flex flex-col gap-12 pt-8">
+                                <motion.p variants={fadeInUp} className="font-mono text-lg leading-relaxed text-gray-800 border-l-2 border-black pl-8">
                                     Traditional pre-visualization requires weeks of storyboarding, expensive concept artists, and ambiguous communication. The gap between the writer's mind and the director's screen is where the budget dies.
-                                </p>
-                            </motion.div>
-                            <div className="flex flex-col justify-center space-y-4 font-mono text-xs">
-                                <motion.div variants={fadeInUp} className="p-4 border border-black flex items-center justify-between opacity-50">
-                                    <span>SCRIPT.PDF</span>
-                                    <span className="text-red-500">READING...</span>
-                                </motion.div>
-                                <motion.div variants={fadeInUp} className="p-4 border border-black flex items-center justify-between opacity-75">
-                                    <span>STORYBOARD.JPG</span>
-                                    <span className="text-orange-500">PENDING...</span>
-                                </motion.div>
-                                <motion.div variants={fadeInUp} className="p-4 bg-black text-white flex items-center justify-between scale-105 shadow-xl">
-                                    <span>CINE-OS_RENDER.MP4</span>
-                                    <span className="text-[var(--color-accent)] animate-pulse">GENERATING...</span>
-                                </motion.div>
+                                </motion.p>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+                                    <motion.div variants={fadeInUp} className="bg-gray-100 p-8 border border-gray-300">
+                                        <div className="flex items-center justify-between mb-4 text-xs font-mono text-gray-500">
+                                            <span>INPUT: SCRIPT.PDF</span>
+                                            <span className="text-red-500">ERROR: AMBIGUOUS</span>
+                                        </div>
+                                        <p className="font-serif italic text-gray-600 text-sm">"INT. LAB - NIGHT. A chaotic mess of cables."</p>
+                                    </motion.div>
+                                    <motion.div variants={fadeInUp} className="bg-black text-white p-8 shadow-2xl relative overflow-hidden">
+                                         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=2070&auto=format&fit=crop')] bg-cover opacity-20 grayscale" />
+                                         <div className="relative z-10">
+                                            <div className="flex items-center justify-between mb-4 text-xs font-mono text-[var(--color-accent)]">
+                                                <span>OUTPUT: RENDER.MP4</span>
+                                                <span className="animate-pulse">GENERATED</span>
+                                            </div>
+                                            <p className="font-mono text-xs text-gray-400">Time: 00:04s // Cost: $0.02</p>
+                                         </div>
+                                    </motion.div>
+                                </div>
                             </div>
                         </div>
                     </motion.section>
 
-                    {/* SECTION 4: ARCHITECTURE (FEATURES) */}
+                    {/* SECTION 4: ARCHITECTURE (STICKY HEADER LAYOUT) */}
                     <motion.section 
-                        className="py-24 px-8 border-b border-[#222] bg-[#050505]"
+                        className="py-32 px-8 border-b border-[#222] bg-[#050505] min-h-screen"
                         initial="hidden"
                         whileInView="visible"
-                        viewport={{ once: true, amount: 0.2 }}
+                        viewport={{ once: true, amount: 0.1 }}
                         variants={staggerContainer}
                     >
-                        <div className="max-w-6xl mx-auto">
-                            <motion.h3 variants={fadeInUp} className="font-mono text-xs tracking-widest mb-12 text-gray-500">SYSTEM ARCHITECTURE</motion.h3>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-[#222] border border-[#222]">
-                                {[
-                                    { title: "Semantic Parser", icon: <FileText/>, desc: "Deconstructs raw narrative into atomic beats and structured scenes using Gemini 2.5 Pro." },
-                                    { title: "Consistency Engine", icon: <Users/>, desc: "Maintains a persistent vector database of character assets to ensure visual continuity." },
-                                    { title: "Physics Renderer", icon: <Film/>, desc: "Veo 3.1 simulates camera lenses, lighting physics, and motion vectors for photorealism." },
-                                ].map((feature, idx) => (
-                                    <motion.div variants={fadeInUp} key={idx} className="bg-[#0A0A0A] p-8 hover:bg-[#111] transition-colors group">
-                                        <div className="mb-6 text-[var(--color-accent)] group-hover:scale-110 transition-transform origin-left">
-                                            {feature.icon}
-                                        </div>
-                                        <h4 className="text-xl font-serif text-white mb-4">{feature.title}</h4>
-                                        <p className="font-mono text-xs text-gray-500 leading-relaxed">{feature.desc}</p>
-                                    </motion.div>
-                                ))}
+                         <div className="max-w-7xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-16">
+                            <div className="md:col-span-4">
+                                <div className="md:sticky md:top-32">
+                                    <h3 className="font-mono text-xs tracking-widest mb-6 text-gray-500 border-b border-[#333] pb-4">02 // ARCHITECTURE</h3>
+                                    <p className="font-mono text-sm text-gray-400 leading-relaxed">
+                                        A modular pipeline powered by Google's multi-modal foundation models.
+                                    </p>
+                                </div>
                             </div>
-                        </div>
+
+                            <div className="md:col-span-8">
+                                <div className="grid grid-cols-1 gap-px bg-[#222] border border-[#222]">
+                                    {[
+                                        { title: "Semantic Parser", icon: <FileText/>, desc: "Deconstructs raw narrative into atomic beats and structured scenes using Gemini 2.5 Pro.", id: "GEMINI-2.5-PRO" },
+                                        { title: "Consistency Engine", icon: <Users/>, desc: "Maintains a persistent vector database of character assets to ensure visual continuity.", id: "VECTOR-DB" },
+                                        { title: "Physics Renderer", icon: <Film/>, desc: "Veo 3.1 simulates camera lenses, lighting physics, and motion vectors for photorealism.", id: "VEO-3.1" },
+                                    ].map((feature, idx) => (
+                                        <motion.div variants={fadeInUp} key={idx} className="bg-[#0A0A0A] p-12 hover:bg-[#111] transition-colors group relative overflow-hidden">
+                                            <div className="absolute top-4 right-4 text-[10px] font-mono text-[#333] group-hover:text-[var(--color-accent)] transition-colors">
+                                                ID: {feature.id}
+                                            </div>
+                                            <div className="mb-8 text-[var(--color-accent)] group-hover:scale-110 transition-transform origin-left">
+                                                {feature.icon}
+                                            </div>
+                                            <h4 className="text-2xl font-serif text-white mb-4">{feature.title}</h4>
+                                            <p className="font-mono text-sm text-gray-500 leading-relaxed max-w-md">{feature.desc}</p>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            </div>
+                         </div>
                     </motion.section>
 
                     {/* SECTION 5: HOW IT WORKS */}
                     <motion.section 
-                        className="py-24 px-8 border-b border-[#222] relative overflow-hidden"
+                        className="py-40 px-8 border-b border-[#222] relative overflow-hidden"
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
                         variants={staggerContainer}
                     >
                         <div className="max-w-6xl mx-auto relative z-10">
-                            <motion.h3 variants={fadeInUp} className="font-mono text-xs tracking-widest mb-16 text-center text-gray-500">THE PIPELINE</motion.h3>
-                            <div className="flex flex-col md:flex-row justify-between items-center gap-8 md:gap-0">
-                                <motion.div variants={fadeInUp} className="text-center group">
-                                    <div className="w-20 h-20 border border-[#333] rounded-full flex items-center justify-center mx-auto mb-6 bg-[#0A0A0A] text-gray-400 group-hover:border-[var(--color-accent)] transition-colors">1</div>
-                                    <h4 className="font-serif text-lg mb-2">Input</h4>
-                                    <p className="font-mono text-xs text-gray-600">Drag & Drop Novel</p>
+                            <motion.h3 variants={fadeInUp} className="font-mono text-xs tracking-widest mb-24 text-center text-gray-500">THE PIPELINE</motion.h3>
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-12 md:gap-0">
+                                <motion.div variants={fadeInUp} className="text-center group w-full md:w-1/3">
+                                    <div className="w-24 h-24 border border-[#333] rounded-full flex items-center justify-center mx-auto mb-8 bg-[#0A0A0A] text-gray-400 group-hover:border-[var(--color-accent)] group-hover:text-white transition-all">
+                                        <span className="font-mono text-xl">01</span>
+                                    </div>
+                                    <h4 className="font-serif text-2xl mb-3">Input</h4>
+                                    <p className="font-mono text-xs text-gray-600 uppercase tracking-widest">Drag & Drop Novel</p>
                                 </motion.div>
-                                <motion.div variants={fadeInUp} className="h-px w-24 bg-gradient-to-r from-[#333] via-[var(--color-accent)] to-[#333] hidden md:block opacity-50"></motion.div>
-                                <motion.div variants={fadeInUp} className="text-center group">
-                                    <div className="w-20 h-20 border border-[var(--color-accent)] rounded-full flex items-center justify-center mx-auto mb-6 bg-[#0A0A0A] text-white shadow-[0_0_20px_rgba(255,69,0,0.3)] group-hover:scale-110 transition-transform">2</div>
-                                    <h4 className="font-serif text-lg mb-2">Compile</h4>
-                                    <p className="font-mono text-xs text-gray-600">AI Structure Analysis</p>
+                                <motion.div variants={fadeInUp} className="h-px w-full md:w-24 bg-gradient-to-r from-[#333] via-[var(--color-accent)] to-[#333] opacity-30"></motion.div>
+                                <motion.div variants={fadeInUp} className="text-center group w-full md:w-1/3">
+                                    <div className="w-24 h-24 border border-[var(--color-accent)] rounded-full flex items-center justify-center mx-auto mb-8 bg-[#0A0A0A] text-white shadow-[0_0_30px_rgba(255,69,0,0.2)] group-hover:scale-110 transition-transform">
+                                         <span className="font-mono text-xl">02</span>
+                                    </div>
+                                    <h4 className="font-serif text-2xl mb-3">Compile</h4>
+                                    <p className="font-mono text-xs text-gray-600 uppercase tracking-widest">AI Structure Analysis</p>
                                 </motion.div>
-                                <motion.div variants={fadeInUp} className="h-px w-24 bg-gradient-to-r from-[#333] via-[var(--color-accent)] to-[#333] hidden md:block opacity-50"></motion.div>
-                                <motion.div variants={fadeInUp} className="text-center group">
-                                    <div className="w-20 h-20 border border-[#333] rounded-full flex items-center justify-center mx-auto mb-6 bg-[#0A0A0A] text-gray-400 group-hover:border-[var(--color-accent)] transition-colors">3</div>
-                                    <h4 className="font-serif text-lg mb-2">Render</h4>
-                                    <p className="font-mono text-xs text-gray-600">4K Video Output</p>
+                                <motion.div variants={fadeInUp} className="h-px w-full md:w-24 bg-gradient-to-r from-[#333] via-[var(--color-accent)] to-[#333] opacity-30"></motion.div>
+                                <motion.div variants={fadeInUp} className="text-center group w-full md:w-1/3">
+                                    <div className="w-24 h-24 border border-[#333] rounded-full flex items-center justify-center mx-auto mb-8 bg-[#0A0A0A] text-gray-400 group-hover:border-[var(--color-accent)] group-hover:text-white transition-all">
+                                         <span className="font-mono text-xl">03</span>
+                                    </div>
+                                    <h4 className="font-serif text-2xl mb-3">Render</h4>
+                                    <p className="font-mono text-xs text-gray-600 uppercase tracking-widest">4K Video Output</p>
                                 </motion.div>
                             </div>
                         </div>
@@ -428,25 +451,25 @@ const App: React.FC = () => {
 
                     {/* SECTION 6: LOGS (TESTIMONIALS) */}
                     <motion.section 
-                        className="py-24 px-8 border-b border-[#222] bg-[#080808]"
+                        className="py-32 px-8 border-b border-[#222] bg-[#080808]"
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
                         variants={staggerContainer}
                     >
-                        <div className="max-w-4xl mx-auto">
-                            <motion.h3 variants={fadeInUp} className="font-mono text-xs tracking-widest mb-12 text-gray-500">TRANSMISSION LOGS</motion.h3>
-                            <div className="space-y-4">
+                        <div className="max-w-5xl mx-auto">
+                            <motion.h3 variants={fadeInUp} className="font-mono text-xs tracking-widest mb-16 text-gray-500">TRANSMISSION LOGS</motion.h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                 {[
                                     { user: "DIR_ANDERSON", role: "Showrunner", msg: "Latency reduced by 400%. The visualization allows me to spot plot holes before a single frame is shot." },
                                     { user: "WRITER_X", role: "Screenwriter", msg: "Seeing my words turn into consistent visuals instantly is terrifyingly beautiful. It changes how I write." }
                                 ].map((log, i) => (
-                                    <motion.div variants={fadeInUp} key={i} className="border-l-2 border-[#333] pl-6 py-2 hover:border-[var(--color-accent)] transition-colors cursor-default">
-                                        <div className="flex items-center gap-3 mb-2 font-mono text-xs">
+                                    <motion.div variants={fadeInUp} key={i} className="border-l border-[#333] pl-8 py-4 hover:border-[var(--color-accent)] transition-colors cursor-default group">
+                                        <div className="flex items-center gap-3 mb-6 font-mono text-xs">
                                             <span className="text-[var(--color-accent)]">@{log.user}</span>
-                                            <span className="bg-[#222] px-1.5 rounded text-[10px] text-gray-400">{log.role}</span>
+                                            <span className="bg-[#222] px-1.5 py-0.5 rounded text-[9px] text-gray-400 group-hover:text-white transition-colors">{log.role}</span>
                                         </div>
-                                        <p className="text-gray-300 font-serif italic text-lg">"{log.msg}"</p>
+                                        <p className="text-gray-400 font-serif italic text-xl leading-relaxed group-hover:text-gray-200 transition-colors">"{log.msg}"</p>
                                     </motion.div>
                                 ))}
                             </div>
@@ -455,12 +478,12 @@ const App: React.FC = () => {
 
                     {/* SECTION 7: FAQ */}
                     <motion.section 
-                        className="py-24 px-8 border-b border-[#222]"
+                        className="py-32 px-8 border-b border-[#222]"
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
                     >
-                        <div className="max-w-3xl mx-auto">
+                        <div className="max-w-4xl mx-auto">
                             <motion.h3 variants={fadeInUp} className="font-mono text-xs tracking-widest mb-12 text-gray-500">KNOWLEDGE BASE</motion.h3>
                             <div className="space-y-2">
                                 {FAQs.map((faq, idx) => (
@@ -470,7 +493,7 @@ const App: React.FC = () => {
                                             className="w-full flex items-center justify-between p-6 text-left hover:bg-[#111] transition-colors"
                                         >
                                             <span className="font-mono text-sm text-gray-300 flex gap-4">
-                                                <span className="text-[var(--color-accent)]">0{idx+1}.</span>
+                                                <span className="text-[var(--color-accent)] opacity-50">0{idx+1}</span>
                                                 {faq.q}
                                             </span>
                                             {openFaq === idx ? <ChevronDown size={16}/> : <ChevronRight size={16}/>}
@@ -483,8 +506,8 @@ const App: React.FC = () => {
                                                     exit={{ height: 0, opacity: 0 }}
                                                     className="overflow-hidden"
                                                 >
-                                                    <div className="p-6 pt-0 pl-14 text-sm font-serif text-gray-500 leading-relaxed border-t border-[#222] border-dashed">
-                                                        {faq.a}
+                                                    <div className="p-6 pt-0 pl-12 text-sm font-serif text-gray-500 leading-relaxed border-t border-[#222] border-dashed">
+                                                        <div className="mt-4">{faq.a}</div>
                                                     </div>
                                                 </motion.div>
                                             )}
@@ -496,12 +519,12 @@ const App: React.FC = () => {
                     </motion.section>
 
                     {/* SECTION 8: FINAL CTA */}
-                    <section className="py-32 px-8 flex flex-col items-center justify-center text-center bg-[#050505]">
+                    <section className="py-40 px-8 flex flex-col items-center justify-center text-center bg-[#050505]">
                         <motion.h2 
                             initial={{ scale: 0.9, opacity: 0 }}
                             whileInView={{ scale: 1, opacity: 1 }}
                             transition={{ duration: 0.8 }}
-                            className="text-6xl font-serif mb-8 text-white"
+                            className="text-7xl font-serif mb-12 text-white"
                         >
                             Ready to Direct?
                         </motion.h2>
@@ -509,26 +532,26 @@ const App: React.FC = () => {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => setView('IMPORT')}
-                            className="bg-[var(--color-accent)] text-black px-10 py-4 font-mono font-bold tracking-widest hover:bg-white transition-colors shadow-[0_0_30px_rgba(255,69,0,0.4)]"
+                            className="bg-[var(--color-accent)] text-black px-12 py-5 font-mono font-bold tracking-widest hover:bg-white transition-colors shadow-[0_0_50px_rgba(255,69,0,0.3)]"
                         >
                             LAUNCH CONSOLE
                         </motion.button>
                     </section>
 
                     {/* FOOTER */}
-                    <footer className="py-12 px-8 border-t border-[#222] bg-[#020202] text-[10px] font-mono text-gray-600">
-                        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
-                            <div className="flex items-center gap-2">
-                                <Film size={14} /> <span>CINE-OS SYSTEMS INC. © 2025</span>
+                    <footer className="py-16 px-8 border-t border-[#222] bg-[#020202] text-[10px] font-mono text-gray-600">
+                        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+                            <div className="flex items-center gap-3">
+                                <Film size={16} /> <span className="tracking-widest">CINE-OS SYSTEMS INC. © 2025</span>
                             </div>
-                            <div className="flex gap-8">
+                            <div className="flex gap-12">
                                 <a href="#" className="hover:text-white transition-colors">PRIVACY_PROTOCOL</a>
                                 <a href="#" className="hover:text-white transition-colors">TERMS_OF_SERVICE</a>
                                 <a href="#" className="hover:text-white transition-colors">API_STATUS</a>
                             </div>
-                            <div className="flex gap-4">
-                                <Github size={14} className="hover:text-white cursor-pointer"/>
-                                <Twitter size={14} className="hover:text-white cursor-pointer"/>
+                            <div className="flex gap-6">
+                                <Github size={16} className="hover:text-white cursor-pointer"/>
+                                <Twitter size={16} className="hover:text-white cursor-pointer"/>
                             </div>
                         </div>
                     </footer>
