@@ -8,25 +8,45 @@ const getAI = (apiKey?: string) => {
 };
 
 /**
- * Step 1: Analyze Novel -> Extract Assets & Script (Scenes -> Beats)
+ * Step 1: Analyze Novel OR Script -> Extract Assets & Structure
+ * @param text The raw text input
+ * @param mode 'NOVEL' (adapt text to script) or 'SCRIPT' (parse existing script)
  */
-export const analyzeNovel = async (text: string): Promise<ScriptData> => {
+export const analyzeNovel = async (text: string, mode: 'NOVEL' | 'SCRIPT' = 'NOVEL'): Promise<ScriptData> => {
   const ai = getAI();
   
-  const systemInstruction = `
-    You are a professional Screenwriter and Cinematographer.
-    Analyze the provided novel text.
-    
-    1. EXTRACT ASSETS: Identify key characters and locations. Provide a 'visualDescription' for each that is consistent and detailed.
-    2. WRITE SCRIPT: 
-       - Break the narrative into SCENES based on location or time changes.
-       - Give each scene a proper SLUGLINE (e.g., "INT. APARTMENT - DAY").
-       - Inside each scene, break the action down into narrative BEATS.
-    
-    Output JSON.
-  `;
+  let systemInstruction = "";
 
-  const safeText = text.substring(0, 15000);
+  if (mode === 'NOVEL') {
+      systemInstruction = `
+        You are a professional Screenwriter.
+        Analyze the provided NOVEL/RAW TEXT.
+        
+        1. EXTRACT ASSETS: Identify key characters and locations. Provide a 'visualDescription' for each.
+        2. ADAPT TO SCRIPT: 
+           - Break the narrative into SCENES based on location or time changes.
+           - Give each scene a proper SLUGLINE (e.g., "INT. APARTMENT - DAY").
+           - Inside each scene, break the action down into narrative BEATS.
+        
+        Output JSON.
+      `;
+  } else {
+      systemInstruction = `
+        You are a professional Script Supervisor and Data Architect.
+        Analyze the provided SCREENPLAY/SCRIPT text.
+        
+        1. PARSE STRUCTURE:
+           - Identify existing SCENES (Sluglines) and their content.
+           - Break scene content into action BEATS.
+        2. EXTRACT ASSETS: 
+           - Identify characters and locations mentioned in the script.
+           - Infer visual descriptions based on the context if not explicitly stated.
+        
+        Output JSON.
+      `;
+  }
+
+  const safeText = text.substring(0, 20000); // Increased limit slightly
 
   try {
     const response = await ai.models.generateContent({
