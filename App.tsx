@@ -9,7 +9,7 @@ import Cursor from './components/Cursor';
 import DecryptedText from './components/DecryptedText';
 import PixelBackground from './components/PixelBackground';
 import { analyzeNovel, generateShotsForBeat, generateShotImage, generateShotVideo } from './services/gemini';
-import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot, Project, Asset } from './types';
+import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot, Project, Asset, AssetType } from './types';
 
 type ViewState = 'LANDING' | 'AUTH' | 'DASHBOARD' | 'IMPORT' | 'WORKSPACE';
 type Theme = 'DARK' | 'LIGHT';
@@ -74,6 +74,11 @@ const App: React.FC = () => {
   
   // Workspace UI State
   const [isAssetsPanelOpen, setIsAssetsPanelOpen] = useState(true);
+  const [collapsedAssetTypes, setCollapsedAssetTypes] = useState<Record<string, boolean>>({
+    'CHARACTER': false,
+    'LOCATION': false,
+    'PROP': false
+  });
   
   // Selection State
   const [selectedSceneId, setSelectedSceneId] = useState<string | null>(null);
@@ -387,9 +392,28 @@ const App: React.FC = () => {
     });
     addLog(`Manual Shot Created`, 'success');
   };
+  
+  const toggleAssetTypeCollapse = (type: string) => {
+    setCollapsedAssetTypes(prev => ({ ...prev, [type]: !prev[type] }));
+  };
 
   const getActiveScene = () => scriptData?.scenes.find(s => s.id === selectedSceneId);
   const getActiveBeat = () => getActiveScene()?.beats.find(b => b.id === selectedBeatId);
+
+  // Helper to group assets
+  const getGroupedAssets = () => {
+      const grouped: Record<string, Asset[]> = { CHARACTER: [], LOCATION: [], PROP: [] };
+      scriptData?.assets.forEach(asset => {
+          if (grouped[asset.type]) {
+              grouped[asset.type].push(asset);
+          } else {
+              // Fallback
+              grouped['PROP'].push(asset); 
+          }
+      });
+      return grouped;
+  };
+  const groupedAssets = getGroupedAssets();
 
   // LANDING PAGE SECTIONS
   const FAQs = [
@@ -962,22 +986,49 @@ const App: React.FC = () => {
                             </div>
                          </div>
                          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-w-[300px] custom-scrollbar">
-                            {scriptData?.assets.map(asset => (
-                                <div key={asset.id} className="p-3 border border-[var(--color-line)] bg-[var(--color-card)] hover:border-[var(--color-accent)] transition-colors group">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className={`text-[10px] px-1.5 py-0.5 border ${
-                                            asset.type === 'CHARACTER' ? 'border-orange-500/50 text-orange-500' : 
-                                            asset.type === 'LOCATION' ? 'border-blue-500/50 text-blue-500' : 'border-gray-500 text-gray-500'
-                                        }`}>
-                                            {asset.type.substring(0, 1)}
-                                        </span>
+                            {['CHARACTER', 'LOCATION', 'PROP'].map(type => {
+                                const assets = groupedAssets[type] || [];
+                                if (assets.length === 0) return null;
+                                const isCollapsed = collapsedAssetTypes[type];
+                                return (
+                                    <div key={type} className="mb-4">
+                                        <button 
+                                            onClick={() => toggleAssetTypeCollapse(type)}
+                                            className="w-full flex items-center justify-between p-2 bg-[var(--color-void)] border border-[var(--color-line)] hover:bg-[var(--color-card)] transition-colors mb-2"
+                                        >
+                                            <span className="font-mono text-xs font-bold">{type}S <span className="text-[var(--color-text-muted)]">({assets.length})</span></span>
+                                            {isCollapsed ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
+                                        </button>
+                                        <AnimatePresence>
+                                            {!isCollapsed && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="space-y-2 pl-2 border-l border-[var(--color-line)] ml-2"
+                                                >
+                                                    {assets.map(asset => (
+                                                        <div key={asset.id} className="p-3 border border-[var(--color-line)] bg-[var(--color-card)] hover:border-[var(--color-accent)] transition-colors group">
+                                                            <div className="flex justify-between items-start mb-2">
+                                                                <span className={`text-[10px] px-1.5 py-0.5 border ${
+                                                                    asset.type === 'CHARACTER' ? 'border-orange-500/50 text-orange-500' : 
+                                                                    asset.type === 'LOCATION' ? 'border-blue-500/50 text-blue-500' : 'border-gray-500 text-gray-500'
+                                                                }`}>
+                                                                    {asset.type.substring(0, 1)}
+                                                                </span>
+                                                            </div>
+                                                            <h3 className="font-bold text-sm mb-1 text-[var(--color-text-main)]">{asset.name}</h3>
+                                                            <p className="text-[10px] text-[var(--color-text-muted)] line-clamp-3 group-hover:text-[var(--color-text-main)] transition-colors">
+                                                                {asset.visualDescription}
+                                                            </p>
+                                                        </div>
+                                                    ))}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
-                                    <h3 className="font-bold text-sm mb-1 text-[var(--color-text-main)]">{asset.name}</h3>
-                                    <p className="text-[10px] text-[var(--color-text-muted)] line-clamp-3 group-hover:text-[var(--color-text-main)] transition-colors">
-                                        {asset.visualDescription}
-                                    </p>
-                                </div>
-                            ))}
+                                )
+                            })}
                          </div>
                     </motion.aside>
 
@@ -1229,3 +1280,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+    
