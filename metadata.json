@@ -1,0 +1,5 @@
+{
+  "name": "CINE-OS",
+  "description": "An AI-powered filmmaking platform that transforms raw novels into full motion video using Gemini and Veo models.",
+  "requestFramePermissions": []
+}
