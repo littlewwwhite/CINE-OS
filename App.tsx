@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play, CheckCircle, Cpu, Globe, Layers, MessageSquare, HelpCircle, Terminal as TerminalIcon, Github, Twitter, ChevronLeft, Layout, Maximize2 } from 'lucide-react';
+import { Upload, Film, Video as VideoIcon, Camera, Users, Zap, Image as ImageIcon, ChevronDown, ChevronRight, FileText, ArrowRight, Book, FileType, Play, CheckCircle, Cpu, Globe, Layers, MessageSquare, HelpCircle, Terminal as TerminalIcon, Github, Twitter, ChevronLeft, Layout, Maximize2, Shield, Lock, Mail, Fingerprint, LogOut } from 'lucide-react';
 import AsciiBackground from './components/AsciiBackground';
 import Terminal from './components/Terminal';
 import Loader from './components/Loader';
@@ -9,7 +9,14 @@ import DecryptedText from './components/DecryptedText';
 import { analyzeNovel, generateShotsForBeat, generateShotImage, generateShotVideo } from './services/gemini';
 import { ProcessingState, ScriptData, LogEntry, Scene, Beat, Shot } from './types';
 
-type ViewState = 'LANDING' | 'IMPORT' | 'WORKSPACE';
+type ViewState = 'LANDING' | 'AUTH' | 'IMPORT' | 'WORKSPACE';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  tier: 'FREE' | 'PRO';
+}
 
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -31,6 +38,7 @@ const App: React.FC = () => {
   const [state, setState] = useState<ProcessingState>(ProcessingState.IDLE);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [scriptData, setScriptData] = useState<ScriptData | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   
   // Workspace UI State
   const [isAssetsPanelOpen, setIsAssetsPanelOpen] = useState(true);
@@ -56,6 +64,34 @@ const App: React.FC = () => {
   const addLog = (message: string, type: LogEntry['type'] = 'info') => {
     const timestamp = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
     setLogs(prev => [...prev, { timestamp, message, type }]);
+  };
+
+  // Auth Simulation
+  const handleAuth = async (provider: 'GOOGLE' | 'GITHUB' | 'EMAIL') => {
+      addLog(`INITIATING HANDSHAKE: ${provider}_OAUTH...`, 'info');
+      // Simulated delay
+      await new Promise(r => setTimeout(r, 1000));
+      
+      if (Math.random() > 0.9) {
+          addLog(`CONNECTION RESET BY PEER. RETRYING...`, 'warning');
+          await new Promise(r => setTimeout(r, 800));
+      }
+
+      setUser({
+          id: `USR-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+          name: 'DIRECTOR_01',
+          email: 'user@cine-os.io',
+          tier: 'PRO'
+      });
+      
+      addLog('IDENTITY VERIFIED. ENCRYPTION KEYS EXCHANGED.', 'success');
+      setTimeout(() => setView('IMPORT'), 500);
+  };
+
+  const handleLogout = () => {
+      setUser(null);
+      setView('LANDING');
+      addLog('SESSION TERMINATED.', 'info');
   };
 
   // Handle File Upload and Auto-Start
@@ -231,10 +267,23 @@ const App: React.FC = () => {
             <h1 className="text-lg font-bold tracking-tighter font-serif">CINE-OS <span className="text-[10px] font-mono font-normal opacity-50 ml-2">PROD_PIPELINE_V4</span></h1>
         </div>
         <div className="flex items-center gap-6">
-            <nav className="hidden md:flex gap-6 text-[10px] font-mono tracking-widest text-gray-400">
-                <button onClick={() => setView('LANDING')} className="hover:text-white transition-colors">SYSTEM</button>
-                <button onClick={() => setView('IMPORT')} className="hover:text-white transition-colors">IMPORT</button>
-                <a href="#" className="hover:text-white transition-colors">DOCS</a>
+            <nav className="hidden md:flex gap-6 text-[10px] font-mono tracking-widest text-gray-400 items-center">
+                {user ? (
+                    <>
+                        <span className="text-[var(--color-accent)] flex items-center gap-2">
+                             <Fingerprint size={12}/> {user.id} <span className="text-gray-600">//</span> {user.name}
+                        </span>
+                        <button onClick={handleLogout} className="hover:text-red-500 transition-colors flex items-center gap-1">
+                            <LogOut size={12}/> DISCONNECT
+                        </button>
+                    </>
+                ) : (
+                    <>
+                        <button onClick={() => setView('LANDING')} className="hover:text-white transition-colors">SYSTEM</button>
+                        <button onClick={() => setView('AUTH')} className="hover:text-white transition-colors">LOGIN</button>
+                        <a href="#" className="hover:text-white transition-colors">DOCS</a>
+                    </>
+                )}
             </nav>
             {state !== ProcessingState.IDLE && state !== ProcessingState.COMPLETE && (
                 <div className="text-[10px] font-mono text-[var(--color-accent)] animate-pulse flex items-center gap-2">
@@ -249,7 +298,7 @@ const App: React.FC = () => {
         
         <AnimatePresence mode='wait'>
             
-            {/* VIEW 1: LANDING PAGE (SCROLLABLE HOMEPAGE) */}
+            {/* VIEW 1: LANDING PAGE */}
             {view === 'LANDING' && (
                 <motion.div 
                     key="landing"
@@ -297,7 +346,7 @@ const App: React.FC = () => {
                             
                             <motion.div className="pt-8" variants={fadeInUp}>
                                 <button 
-                                    onClick={() => setView('IMPORT')}
+                                    onClick={() => setView('AUTH')}
                                     className="group relative px-12 py-6 bg-transparent border border-[#333] hover:border-[var(--color-accent)] hover:bg-[var(--color-accent)]/10 transition-all duration-300 overflow-hidden"
                                 >
                                     <span className="flex items-center gap-3 font-mono text-xs tracking-widest group-hover:text-white transition-colors relative z-10">
@@ -311,7 +360,7 @@ const App: React.FC = () => {
                         </motion.div>
                     </motion.section>
 
-                    {/* SECTION 2: SOCIAL PROOF / NETWORK */}
+                    {/* SECTION 2: SOCIAL PROOF */}
                     <section className="border-b border-[#222] bg-[#0A0A0A] py-8 overflow-hidden whitespace-nowrap z-20 relative">
                         <div className="flex items-center gap-16 animate-marquee text-gray-600 font-mono text-xs tracking-widest opacity-50">
                             {[1,2,3,4].map(i => (
@@ -325,8 +374,8 @@ const App: React.FC = () => {
                         </div>
                     </section>
 
-                    {/* SECTION 3: PROBLEM STATEMENT (STICKY HEADER LAYOUT) */}
-                    <motion.section 
+                     {/* SECTION 3: PROBLEM STATEMENT */}
+                     <motion.section 
                         className="py-32 px-8 border-b border-[#222] bg-white text-black min-h-screen flex items-center"
                         initial="hidden"
                         whileInView="visible"
@@ -370,7 +419,7 @@ const App: React.FC = () => {
                         </div>
                     </motion.section>
 
-                    {/* SECTION 4: ARCHITECTURE (STICKY HEADER LAYOUT) */}
+                    {/* SECTION 4: ARCHITECTURE */}
                     <motion.section 
                         className="py-32 px-8 border-b border-[#222] bg-[#050505] min-h-screen"
                         initial="hidden"
@@ -411,7 +460,7 @@ const App: React.FC = () => {
                          </div>
                     </motion.section>
 
-                    {/* SECTION 5: HOW IT WORKS */}
+                    {/* SECTION 5: PIPELINE */}
                     <motion.section 
                         className="py-40 px-8 border-b border-[#222] relative overflow-hidden"
                         initial="hidden"
@@ -449,34 +498,7 @@ const App: React.FC = () => {
                         </div>
                     </motion.section>
 
-                    {/* SECTION 6: LOGS (TESTIMONIALS) */}
-                    <motion.section 
-                        className="py-32 px-8 border-b border-[#222] bg-[#080808]"
-                        initial="hidden"
-                        whileInView="visible"
-                        viewport={{ once: true }}
-                        variants={staggerContainer}
-                    >
-                        <div className="max-w-5xl mx-auto">
-                            <motion.h3 variants={fadeInUp} className="font-mono text-xs tracking-widest mb-16 text-gray-500">TRANSMISSION LOGS</motion.h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                                {[
-                                    { user: "DIR_ANDERSON", role: "Showrunner", msg: "Latency reduced by 400%. The visualization allows me to spot plot holes before a single frame is shot." },
-                                    { user: "WRITER_X", role: "Screenwriter", msg: "Seeing my words turn into consistent visuals instantly is terrifyingly beautiful. It changes how I write." }
-                                ].map((log, i) => (
-                                    <motion.div variants={fadeInUp} key={i} className="border-l border-[#333] pl-8 py-4 hover:border-[var(--color-accent)] transition-colors cursor-default group">
-                                        <div className="flex items-center gap-3 mb-6 font-mono text-xs">
-                                            <span className="text-[var(--color-accent)]">@{log.user}</span>
-                                            <span className="bg-[#222] px-1.5 py-0.5 rounded text-[9px] text-gray-400 group-hover:text-white transition-colors">{log.role}</span>
-                                        </div>
-                                        <p className="text-gray-400 font-serif italic text-xl leading-relaxed group-hover:text-gray-200 transition-colors">"{log.msg}"</p>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        </div>
-                    </motion.section>
-
-                    {/* SECTION 7: FAQ */}
+                    {/* SECTION 6: FAQ */}
                     <motion.section 
                         className="py-32 px-8 border-b border-[#222]"
                         initial="hidden"
@@ -518,7 +540,7 @@ const App: React.FC = () => {
                         </div>
                     </motion.section>
 
-                    {/* SECTION 8: FINAL CTA */}
+                    {/* SECTION 7: FINAL CTA */}
                     <section className="py-40 px-8 flex flex-col items-center justify-center text-center bg-[#050505]">
                         <motion.h2 
                             initial={{ scale: 0.9, opacity: 0 }}
@@ -531,7 +553,7 @@ const App: React.FC = () => {
                         <motion.button 
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => setView('IMPORT')}
+                            onClick={() => setView('AUTH')}
                             className="bg-[var(--color-accent)] text-black px-12 py-5 font-mono font-bold tracking-widest hover:bg-white transition-colors shadow-[0_0_50px_rgba(255,69,0,0.3)]"
                         >
                             LAUNCH CONSOLE
@@ -558,7 +580,81 @@ const App: React.FC = () => {
                 </motion.div>
             )}
 
-            {/* VIEW 2: IMPORT SELECTION */}
+            {/* VIEW 2: AUTH */}
+            {view === 'AUTH' && (
+                <motion.div 
+                    key="auth"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="flex-1 flex flex-col items-center justify-center p-8 bg-[#050505]"
+                >
+                    <div className="w-full max-w-md border border-[#333] bg-[#0A0A0A] p-8 relative overflow-hidden">
+                        {/* Scanning Line Animation */}
+                        <motion.div 
+                            initial={{ top: 0 }}
+                            animate={{ top: '100%' }}
+                            transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+                            className="absolute left-0 w-full h-px bg-[var(--color-accent)] opacity-50 shadow-[0_0_10px_var(--color-accent)]"
+                        />
+                        
+                        <div className="flex justify-center mb-8">
+                            <Shield size={48} className="text-[var(--color-accent)] opacity-80" />
+                        </div>
+                        
+                        <h2 className="text-2xl font-serif text-center mb-2">Identity Verification</h2>
+                        <p className="text-xs font-mono text-center text-gray-500 mb-8 tracking-widest">ESTABLISH SECURE HANDSHAKE</p>
+
+                        <div className="space-y-4">
+                             <div className="space-y-2">
+                                <label className="text-[10px] font-mono text-gray-400">EMAIL_ADDRESS</label>
+                                <div className="flex items-center border border-[#333] bg-[#050505] p-3 focus-within:border-[var(--color-accent)] transition-colors">
+                                    <Mail size={14} className="text-gray-600 mr-3" />
+                                    <input type="email" placeholder="director@cine-os.io" className="bg-transparent border-none outline-none text-xs font-mono w-full text-white placeholder-gray-700" />
+                                </div>
+                             </div>
+                             
+                             <div className="space-y-2">
+                                <label className="text-[10px] font-mono text-gray-400">ACCESS_KEY (PASSWORD)</label>
+                                <div className="flex items-center border border-[#333] bg-[#050505] p-3 focus-within:border-[var(--color-accent)] transition-colors">
+                                    <Lock size={14} className="text-gray-600 mr-3" />
+                                    <input type="password" placeholder="••••••••••••" className="bg-transparent border-none outline-none text-xs font-mono w-full text-white placeholder-gray-700" />
+                                </div>
+                             </div>
+
+                             <button 
+                                onClick={() => handleAuth('EMAIL')}
+                                className="w-full bg-white text-black font-mono text-xs font-bold py-3 hover:bg-[var(--color-accent)] hover:text-white transition-colors"
+                             >
+                                AUTHENTICATE
+                             </button>
+
+                             <div className="flex items-center gap-4 my-6">
+                                <div className="h-px bg-[#222] flex-1" />
+                                <span className="text-[9px] font-mono text-gray-600">OR CONNECT NEURAL INTERFACE</span>
+                                <div className="h-px bg-[#222] flex-1" />
+                             </div>
+
+                             <div className="grid grid-cols-2 gap-4">
+                                <button onClick={() => handleAuth('GITHUB')} className="flex items-center justify-center gap-2 border border-[#333] p-3 hover:bg-[#111] hover:border-gray-500 transition-colors">
+                                    <Github size={14} />
+                                    <span className="text-[10px] font-mono">GITHUB_NODE</span>
+                                </button>
+                                <button onClick={() => handleAuth('GOOGLE')} className="flex items-center justify-center gap-2 border border-[#333] p-3 hover:bg-[#111] hover:border-gray-500 transition-colors">
+                                    <Globe size={14} />
+                                    <span className="text-[10px] font-mono">GOOGLE_CLOUD</span>
+                                </button>
+                             </div>
+                        </div>
+
+                        <div className="mt-6 text-center">
+                             <span className="text-[9px] font-mono text-gray-600">ENCRYPTION: AES-256 // SERVER: US-EAST-1</span>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
+            {/* VIEW 3: IMPORT SELECTION */}
             {view === 'IMPORT' && (
                 <motion.div 
                     key="import"
@@ -630,7 +726,7 @@ const App: React.FC = () => {
                 </motion.div>
             )}
 
-            {/* VIEW 3: WORKSPACE (OPTIMIZED LAYOUT) */}
+            {/* VIEW 4: WORKSPACE (OPTIMIZED LAYOUT) */}
             {view === 'WORKSPACE' && (
                 <motion.div 
                     key="workspace"
